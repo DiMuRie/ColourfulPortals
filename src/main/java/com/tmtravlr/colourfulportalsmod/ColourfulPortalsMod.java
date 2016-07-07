@@ -1,15 +1,5 @@
 package com.tmtravlr.colourfulportalsmod;
 
-import cpw.mods.fml.client.registry.RenderingRegistry;
-import cpw.mods.fml.common.Mod;
-import cpw.mods.fml.common.Mod.EventHandler;
-import cpw.mods.fml.common.Mod.Instance;
-import cpw.mods.fml.common.SidedProxy;
-import cpw.mods.fml.common.event.FMLInitializationEvent;
-import cpw.mods.fml.common.event.FMLPostInitializationEvent;
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.registry.GameRegistry;
-
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
@@ -25,10 +15,10 @@ import java.util.LinkedList;
 import java.util.Stack;
 import java.util.TreeSet;
 
-import scala.actors.threadpool.Arrays;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockDispenser;
 import net.minecraft.block.material.Material;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.dispenser.BehaviorDefaultDispenseItem;
 import net.minecraft.dispenser.IBlockSource;
@@ -39,18 +29,20 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.tileentity.TileEntityDispenser;
 import net.minecraft.util.EnumFacing;
-import net.minecraft.util.IRegistry;
-import net.minecraft.util.WeightedRandomChestContent;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
-import net.minecraft.world.WorldProvider;
 import net.minecraft.world.WorldServer;
-import net.minecraftforge.common.ChestGenHooks;
 import net.minecraftforge.common.config.Configuration;
-import net.minecraftforge.common.config.Property;
-import net.minecraftforge.fluids.BlockFluidBase;
-import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidContainerRegistry;
+import net.minecraftforge.fml.common.FMLLog;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.common.SidedProxy;
+import net.minecraftforge.fml.common.event.FMLInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.registry.GameRegistry;
 import net.minecraftforge.oredict.ShapelessOreRecipe;
 
 @Mod(modid="colourfulportalsmod", name="Colourful Portals Mod", version="1.4.3")
@@ -60,7 +52,7 @@ public class ColourfulPortalsMod
 	public static ColourfulPortalsMod colourfulPortalsMod;
 	@SidedProxy(clientSide="com.tmtravlr.colourfulportalsmod.ClientProxy", serverSide="com.tmtravlr.colourfulportalsmod.CommonProxy")
 	public static CommonProxy proxy;
-	public static final Fluid colourfulFluid = new ColourfulFluid();
+	public static final ColourfulFluid colourfulFluid = new ColourfulFluid();
 	public static Item bucketColourfulWaterEmpty;
 	public static Item bucketColourfulWater;
 	public static Item bucketColourfulWaterUnmixed;
@@ -118,7 +110,7 @@ public class ColourfulPortalsMod
 		this.currentFolder = "";
 	}
 
-	public static RenderStandaloneCP standaloneRenderer = new RenderStandaloneCP();
+	//public static RenderStandaloneCP standaloneRenderer = new RenderStandaloneCP();
 
 	@Mod.EventHandler
 	public void preInit(FMLPreInitializationEvent event)
@@ -131,12 +123,12 @@ public class ColourfulPortalsMod
 		config.load();
 
 
-		maxPortalGenerationDistance = config.get("other", "Random Portal Generation Max Distance", 3000).getInt();
-		maxPortalsPerType = config.get("other", "Maximum Number of Portals per Type (Colour and Material)", -1).getInt();
-		maxPortalSizeCheck = config.get("other", "Maximum Portal Size (Make Bigger for Larger Portals)", 16).getInt();
-		xpLevelMixingCost = config.get("other", "Number of XP Levels Needed to Mix Colourful Water", 5).getInt();
-		xpLevelRemixingCost = config.get("other", "Number of XP Levels Needed to Re-Mix Colourful Water", 2).getInt();
-		xpBottleCrafting = config.get("other", "Allow crafting of colourful water with XP bottles (for automation)", false).getBoolean();
+		maxPortalGenerationDistance = config.getInt("Random Portal Generation Max Distance", "other", 3000, 0, 30000000, "Maximum distance away from you a randomized portal will generate.");
+		maxPortalsPerType = config.getInt("Maximum Number of Portals per Type (Colour and Material)", "other", -1, -1, Integer.MAX_VALUE, "Maximum number of portals you can make per type. -1 means unlimited.");
+		maxPortalSizeCheck = config.getInt("Maximum Portal Size (Make Bigger for Larger Portals)", "other", 16, 1, Integer.MAX_VALUE, "Limit on the maximum size of portal to prevent lag from accidentally creating massive portals.\nThe portal will create up to this number of blocks away from where you place the colourful water.");
+		xpLevelMixingCost = config.getInt("Number of XP Levels Needed to Mix Colourful Water", "other", 5, 0, Integer.MAX_VALUE, "Levels of XP you need to mix the colourful water from a bucket of dyes.");
+		xpLevelRemixingCost = config.getInt("Number of XP Levels Needed to Re-Mix Colourful Water", "other", 2, 0, Integer.MAX_VALUE, "Levels of XP that you need to mix the partially enchanted bucket of dyes.");
+		xpBottleCrafting = config.getBoolean("Allow crafting of colourful water with XP bottles (for automation)", "other", false, "Adds a crafting recipe for the colourful water using XP bottles.");
 		addColourfulWaterToDungeonChests = config.getBoolean("Add Buckets of Colourful Water to Dungeon Chests?", "other", true, "If set to true, full and empty buckets of colourful water will occasionally spawn in chests.");
 		if (xpLevelRemixingCost > xpLevelMixingCost) {
 			xpLevelRemixingCost = xpLevelMixingCost;
@@ -154,20 +146,21 @@ public class ColourfulPortalsMod
 		int[] fullDefaultList = { 0, 1, -1 };
 		int[] emptyList = new int[0];
 
-		useDestinationBlackList = config.get("random_destination_blacklist", "Use this Blacklist?", true).getBoolean(true);
-		useDestinationWhiteList = config.get("random_destination_whitelist", "Use this Whitelist?", false).getBoolean(false);
+		useDestinationBlackList = config.getBoolean("Use this Blacklist?", "random_destination_blacklist", true, "");
+		useDestinationWhiteList = config.getBoolean("Use this Whitelist?", "random_destination_whitelist", false, "");
 		destinationBlackList = config.get("random_destination_blacklist", "List of Blacklisted Dimensions for Random Generation", defaultBlackList).getIntList();
 		destinationWhiteList = config.get("random_destination_whitelist", "List of Whitelisted Dimensions for Random Generation", defaultWhiteList).getIntList();
 		
-		useDimensionBlackList = config.get("dimension_blacklist", "Use this Blacklist?", false).getBoolean(false);
-		useDimensionWhiteList = config.get("dimension_whitelist", "Use this Whitelist?", false).getBoolean(false);
+		useDimensionBlackList = config.getBoolean("Use this Blacklist?", "dimension_blacklist", false, "");
+		useDimensionWhiteList = config.getBoolean("Use this Whitelist?", "dimension_whitelist", false, "");
 		dimensionBlackList = config.get("dimension_blacklist", "List of Blacklisted Dimensions for all Portals", emptyList).getIntList();
 		dimensionWhiteList = config.get("dimension_whitelist", "List of Whitelisted Dimensions for all Portals", fullDefaultList).getIntList();
 
 		config.addCustomCategoryComment("portal_frame_types", "Blocks that can be used to make portals out of.\nThey should have 16 metadata types that represent\ncolours in the same way as wool.");
 
 		String[] defaultPortalTypes = { "wool", "stained_hardened_clay", "stained_glass" };
-		frameBlockNames = config.get("portal_frame_types", "Portal Frame Blocks", defaultPortalTypes).getStringList();
+		//No support for custom portal types at the moment!
+		frameBlockNames = defaultPortalTypes;//= config.get("portal_frame_types", "Portal Frame Blocks", defaultPortalTypes).getStringList();
 		bucketColourfulWaterEmpty = new ItemBucketColourfulWater(true, true, false).setUnlocalizedName("bucketColourfulWaterEmpty");
 		bucketColourfulWater = new ItemBucketColourfulWater(true, true, true).setUnlocalizedName("bucketColourfulWater");
 		bucketColourfulWaterUnmixed = new ItemBucketColourfulWater(false, false, true).setUnlocalizedName("bucketColourfulWaterUnmixed");
@@ -194,29 +187,29 @@ public class ColourfulPortalsMod
 		BlockDispenser.dispenseBehaviorRegistry.putObject(bucketColourfulWaterEmpty, new BehaviorDefaultDispenseItem()
 		{
 			private final BehaviorDefaultDispenseItem field_150840_b = new BehaviorDefaultDispenseItem();
-			private static final String __OBFID = "CL_00001400";
-
+			
 			public ItemStack dispenseStack(IBlockSource blockSource, ItemStack itemStack)
 			{
-				EnumFacing enumfacing = BlockDispenser.func_149937_b(blockSource.getBlockMetadata());
+				EnumFacing enumfacing = BlockDispenser.getFacing(blockSource.getBlockMetadata());
 				World world = blockSource.getWorld();
-				int x = blockSource.getXInt() + enumfacing.getFrontOffsetX();
-				int y = blockSource.getYInt() + enumfacing.getFrontOffsetY();
-				int z = blockSource.getZInt() + enumfacing.getFrontOffsetZ();
-				int meta = world.getBlockMetadata(x, y, z);
+				int x = MathHelper.floor_double(blockSource.getX() + enumfacing.getFrontOffsetX());
+				int y = MathHelper.floor_double(blockSource.getY() + enumfacing.getFrontOffsetY());
+				int z = MathHelper.floor_double(blockSource.getZ() + enumfacing.getFrontOffsetZ());
+				BlockPos pos = new BlockPos(x, y, z);
+				int meta = getMeta(world, pos);
 				Item item = itemStack.getItem();
-				if ((world.getBlock(x, y, z) == ColourfulPortalsMod.colourfulWater) && (meta == 0)) {
+				if ((world.getBlockState(pos) == ColourfulPortalsMod.colourfulWater) && (meta == 0)) {
 					item = ColourfulPortalsMod.bucketColourfulWater;
 				} else {
 					return super.dispenseStack(blockSource, itemStack);
 				}
-				world.setBlockToAir(x, y, z);
+				world.setBlockToAir(pos);
 				if (--itemStack.stackSize == 0)
 				{
-					itemStack.func_150996_a(item);
+					itemStack.setItem(item);
 					itemStack.stackSize = 1;
 				}
-				else if (((TileEntityDispenser)blockSource.getBlockTileEntity()).func_146019_a(new ItemStack(item)) < 0)
+				else if (((TileEntityDispenser)blockSource.getBlockTileEntity()).addItemStack(new ItemStack(item)) < 0)
 				{
 					this.field_150840_b.dispense(blockSource, new ItemStack(item));
 				}
@@ -226,29 +219,28 @@ public class ColourfulPortalsMod
 		BlockDispenser.dispenseBehaviorRegistry.putObject(bucketColourfulWater, new BehaviorDefaultDispenseItem()
 		{
 			private final BehaviorDefaultDispenseItem field_150840_b = new BehaviorDefaultDispenseItem();
-			private static final String __OBFID = "CL_00001400";
-
+			
 			public ItemStack dispenseStack(IBlockSource blockSource, ItemStack itemStack)
 			{
-				EnumFacing enumfacing = BlockDispenser.func_149937_b(blockSource.getBlockMetadata());
+				EnumFacing enumfacing = BlockDispenser.getFacing(blockSource.getBlockMetadata());
 				World world = blockSource.getWorld();
-				int x = blockSource.getXInt() + enumfacing.getFrontOffsetX();
-				int y = blockSource.getYInt() + enumfacing.getFrontOffsetY();
-				int z = blockSource.getZInt() + enumfacing.getFrontOffsetZ();
-				int meta = world.getBlockMetadata(x, y, z);
+				int x = MathHelper.floor_double(blockSource.getX() + enumfacing.getFrontOffsetX());
+				int y = MathHelper.floor_double(blockSource.getY() + enumfacing.getFrontOffsetY());
+				int z = MathHelper.floor_double(blockSource.getZ() + enumfacing.getFrontOffsetZ());
+				int meta = getMeta(world, new BlockPos(x, y, z));
 				Item item = itemStack.getItem();
-				if ((world.getBlock(x, y, z) == Blocks.air) && (meta == 0)) {
+				if ((world.isAirBlock(new BlockPos(x, y, z))) && (meta == 0)) {
 					item = ColourfulPortalsMod.bucketColourfulWaterEmpty;
 				} else {
 					return super.dispenseStack(blockSource, itemStack);
 				}
-				world.setBlock(x, y, z, ColourfulPortalsMod.colourfulWater);
+				world.setBlockState(new BlockPos(x, y, z), ColourfulPortalsMod.colourfulWater.getDefaultState());
 				if (--itemStack.stackSize == 0)
 				{
-					itemStack.func_150996_a(item);
+					itemStack.setItem(item);
 					itemStack.stackSize = 1;
 				}
-				else if (((TileEntityDispenser)blockSource.getBlockTileEntity()).func_146019_a(new ItemStack(item)) < 0)
+				else if (((TileEntityDispenser)blockSource.getBlockTileEntity()).addItemStack(new ItemStack(item)) < 0)
 				{
 					this.field_150840_b.dispense(blockSource, new ItemStack(item));
 				}
@@ -276,17 +268,15 @@ public class ColourfulPortalsMod
 	{
 		for (int i = 0; i < frameBlockNames.length; i++)
 		{
-			Object blockObj = Block.blockRegistry.getObject(frameBlockNames[i]);
+			Block frameBlock = Block.getBlockFromName(frameBlockNames[i]);
 			
-			if(blockObj == null || !(blockObj instanceof Block)) {
-				System.err.println("[Colourful Portals] Error! Couldn't find a block with name '" + frameBlockNames[i] + "'!");
+			if(frameBlock == null || frameBlock == Blocks.air) {
+				FMLLog.warning("[Colourful Portals] Error! Couldn't find a block with name '" + frameBlockNames[i] + "'!");
 				continue;
 			}
 			
-			Block frameBlock = (Block) blockObj;
-			
-			cpBlocks.put(i, (BlockColourfulPortal)new BlockColourfulPortal("portal_colour", Material.portal).setHardness(-1.0F).setStepSound(Block.soundTypeGlass).setLightLevel(0.75F).setBlockName("colourfulPortal"));
-			scpBlocks.put(i, (BlockStandaloneCP)new BlockStandaloneCP("portal_colour", frameBlock.getMaterial()).setHardness(0.8F).setStepSound(frameBlock.stepSound).setLightLevel(0.75F).setBlockName("standaloneColourfulPortal"));
+			cpBlocks.put(i, (BlockColourfulPortal)new BlockColourfulPortal("portal_colour", Material.portal).setHardness(-1.0F).setStepSound(Block.soundTypeGlass).setLightLevel(0.75F).setUnlocalizedName("colourfulPortal"));
+			scpBlocks.put(i, (BlockStandaloneCP)new BlockStandaloneCP("portal_colour", frameBlock.getMaterial()).setHardness(0.8F).setStepSound(frameBlock.stepSound).setLightLevel(0.75F).setUnlocalizedName("standaloneColourfulPortal"));
 			frameBlocks.put(i, frameBlock);
 			
 			int colonIndex = frameBlockNames[i].indexOf(":");
@@ -328,8 +318,6 @@ public class ColourfulPortalsMod
 			GameRegistry.addShapelessRecipe(new ItemStack(bucketColourfulWater), new Object[] {new ItemStack(bucketColourfulWaterPartMixed), new ItemStack(Items.experience_bottle),new ItemStack(Items.experience_bottle),new ItemStack(Items.experience_bottle),new ItemStack(Items.experience_bottle)});
 		}
 
-		colourfulPortalRenderId = RenderingRegistry.getNextAvailableRenderId();
-
 		proxy.registerSounds();
 		proxy.registerRenderers();
 		proxy.registerEventHandlers();
@@ -358,16 +346,15 @@ public class ColourfulPortalsMod
 		return frameBlocks.containsValue(block);
 	}
 
-	public static boolean isPortalOrFrameBlock(IBlockAccess iba, int x, int y, int z)
+	public static boolean isPortalOrFrameBlock(IBlockAccess iba, BlockPos pos)
 	{
-		return (isFramedCPBlock(iba.getBlock(x, y, z))) || (isFrameBlock(iba.getBlock(x, y, z)));
+		return (isFramedCPBlock(iba.getBlockState(pos).getBlock())) || (isFrameBlock(iba.getBlockState(pos).getBlock()));
 	}
 
-	public static int getShiftedCPMetadata(IBlockAccess iba, int x, int y, int z)
+	public static int getShiftedCPMetadata(IBlockAccess iba, BlockPos pos)
 	{
-		Block block = iba.getBlock(x, y, z);
-		int meta = iba.getBlockMetadata(x, y, z);
-		return getShiftedCPMetadata(block, meta);
+		IBlockState state = iba.getBlockState(pos); 
+		return getShiftedCPMetadata(state);
 	}
 
 	public static int getIndexFromShiftedMetadata(int meta)
@@ -375,21 +362,21 @@ public class ColourfulPortalsMod
 		return (int)Math.floor(meta / 16);
 	}
 
-	public static int getShiftedCPMetadata(Block block, int meta)
+	public static int getShiftedCPMetadata(IBlockState state)
 	{
 		for (int i = 0; i < frameBlocks.size(); i++) {
-			if ((cpBlocks.get(i) == block) || (scpBlocks.get(i) == block)) {
-				return meta + 16 * i;
+			if ((cpBlocks.get(i) == state.getBlock()) || (scpBlocks.get(i) == state.getBlock())) {
+				return getMeta(state) + 16 * i;
 			}
 		}
 		return -1;
 	}
 
-	public static int getShiftedCPMetadataByFrameBlock(Block block, int meta)
+	public static int getShiftedCPMetadataByFrameBlock(IBlockState state)
 	{
 		for (int i = 0; i < frameBlocks.size(); i++) {
-			if (frameBlocks.get(i) == block) {
-				return meta + 16 * i;
+			if (frameBlocks.get(i) == state.getBlock()) {
+				return getMeta(state) + 16 * i;
 			}
 		}
 		return -1;
@@ -425,11 +412,19 @@ public class ColourfulPortalsMod
 		return meta % 16;
 	}
 
-	public static void setFramedCPBlock(World world, int x, int y, int z, Block frameBlock, int meta, int flag)
+	public static void setFramedCPBlock(World world, BlockPos pos, Block frameBlock, int meta, int flag)
 	{
-		int index = getIndexFromShiftedMetadata(getShiftedCPMetadataByFrameBlock(frameBlock, meta));
+		int index = getIndexFromShiftedMetadata(getShiftedCPMetadataByFrameBlock(frameBlock.getStateFromMeta(meta)));
 		Block block = (Block)cpBlocks.get(index);
-		world.setBlock(x, y, z, block, meta, flag);
+		world.setBlockState(pos, block.getStateFromMeta(meta), flag);
+	}
+	
+	public static int getMeta(IBlockAccess iba, BlockPos pos) {
+		return getMeta(iba.getBlockState(pos));
+	}
+	
+	public static int getMeta(IBlockState state) {
+		return state.getBlock().getMetaFromState(state);
 	}
 
 	public static boolean isDimensionValidForDestination(int dimension)
@@ -489,18 +484,18 @@ public class ColourfulPortalsMod
 		return true;
 	}
 
-	public static boolean canCreatePortal(World world, int x, int y, int z, Block block, int meta)
+	public static boolean canCreatePortal(World world, BlockPos pos, IBlockState state)
 	{
-		if (tooManyPortals(block, meta)) {
+		if (tooManyPortals(state)) {
 			return false;
 		}
-		if (!isDimensionValidAtAll(world.provider.dimensionId)) {
+		if (!isDimensionValidAtAll(world.provider.getDimensionId())) {
 			return false;
 		}
 		return true;
 	}
 
-	public static boolean tooManyPortals(Block block, int meta)
+	public static boolean tooManyPortals(IBlockState state)
 	{
 		if (maxPortalsPerType < 0) {
 			return false;
@@ -510,7 +505,7 @@ public class ColourfulPortalsMod
 		}
 		int portalsWithType = 0;
 		for (int i = 0; i < colourfulPortals.size(); i++) {
-			if (((ColourfulPortalLocation)colourfulPortals.get(i)).portalMetadata == getShiftedCPMetadata(block, meta)) {
+			if (((ColourfulPortalLocation)colourfulPortals.get(i)).portalMetadata == getShiftedCPMetadata(state)) {
 				portalsWithType++;
 			}
 		}
@@ -572,8 +567,9 @@ public class ColourfulPortalsMod
 		for (ColourfulPortalLocation portal : colourfulPortals)
 		{
 			WorldServer currentWS = MinecraftServer.getServer().worldServerForDimension(portal.dimension);
-			if ((getCPBlockByShiftedMetadata(portal.portalMetadata) != currentWS.getBlock(portal.xPos, portal.yPos, portal.zPos)) && (getStandaloneCPBlockByShiftedMetadata(portal.portalMetadata) != currentWS.getBlock(portal.xPos, portal.yPos, portal.zPos))) {
-				if (!BlockColourfulPortal.tryToCreatePortal(currentWS, portal.xPos, portal.yPos, portal.zPos, false)) {
+			BlockPos currentPos = new BlockPos(portal.xPos, portal.yPos, portal.zPos);
+			if ((getCPBlockByShiftedMetadata(portal.portalMetadata) != currentWS.getBlockState(currentPos).getBlock()) && (getStandaloneCPBlockByShiftedMetadata(portal.portalMetadata) != currentWS.getBlockState(currentPos).getBlock())) {
+				if (!BlockColourfulPortal.tryToCreatePortal(currentWS, currentPos, false)) {
 					toDelete.add(portal);
 				}
 			}
@@ -584,16 +580,16 @@ public class ColourfulPortalsMod
 		savePortals();
 	}
 
-	public static ColourfulPortalLocation getColourfulDestination(World world, int x, int y, int z)
+	public static ColourfulPortalLocation getColourfulDestination(World world, BlockPos pos)
 	{
 		if (colourfulPortals.size() > 0)
 		{
-			ColourfulPortalLocation start = findCPLocation(world, x, y, z);
+			ColourfulPortalLocation start = findCPLocation(world, pos);
 
 
 			int originalPos = colourfulPortals.indexOf(start);
 			if (originalPos == -1) {
-				return new ColourfulPortalLocation(x, y, z, world.provider.dimensionId, getShiftedCPMetadata(world, x, y, z));
+				return new ColourfulPortalLocation(pos, world.provider.getDimensionId(), getShiftedCPMetadata(world, pos));
 			}
 			int size = colourfulPortals.size();
 			for (int i = 0; i < size; i++)
@@ -611,54 +607,54 @@ public class ColourfulPortalsMod
 			}
 			return start;
 		}
-		return new ColourfulPortalLocation(x, y, z, world.provider.dimensionId, getShiftedCPMetadata(world, x, y, z));
+		return new ColourfulPortalLocation(pos, world.provider.getDimensionId(), getShiftedCPMetadata(world, pos));
 	}
 
-	public static ColourfulPortalLocation findCPLocation(World world, int x, int y, int z)
+	public static ColourfulPortalLocation findCPLocation(World world, BlockPos pos)
 	{
-		if (!isCPBlock(world.getBlock(x, y, z))) {
+		if (!isCPBlock(world.getBlockState(pos).getBlock())) {
 			return null;
 		}
-		if (isStandaloneCPBlock(world.getBlock(x, y, z))) {
-			return new ColourfulPortalLocation(x, y, z, world.provider.dimensionId, getShiftedCPMetadata(world, x, y, z));
+		if (isStandaloneCPBlock(world.getBlockState(pos).getBlock())) {
+			return new ColourfulPortalLocation(pos, world.provider.getDimensionId(), getShiftedCPMetadata(world, pos));
 		}
 		boolean xDir = true;
 		boolean yDir = true;
 		boolean zDir = true;
 		int i = 0;
 		int maxSize = maxPortalSizeCheck * maxPortalSizeCheck + 1;
-		for (i = 0; (i < maxSize) && (isCPBlock(world.getBlock(x + i, y, z))); i++) {}
-		if (!isFrameBlock(world.getBlock(x + i, y, z)))
+		for (i = 0; (i < maxSize) && (isCPBlock(world.getBlockState(pos.add(i, 0, 0)).getBlock())); i++) {}
+		if (!isFrameBlock(world.getBlockState(pos.add(i, 0, 0)).getBlock()))
 		{
 			zDir = false;
 			yDir = false;
 		}
-		for (i = 0; (i < maxSize) && (isCPBlock(world.getBlock(x - i, y, z))); i++) {}
-		if (!isFrameBlock(world.getBlock(x - i, y, z)))
+		for (i = 0; (i < maxSize) && (isCPBlock(world.getBlockState(pos.add(-i, 0, 0)).getBlock())); i++) {}
+		if (!isFrameBlock(world.getBlockState(pos.add(-i, 0, 0)).getBlock()))
 		{
 			zDir = false;
 			yDir = false;
 		}
-		for (i = 0; (i < maxSize) && (isCPBlock(world.getBlock(x, y + i, z))); i++) {}
-		if (!isFrameBlock(world.getBlock(x, y + i, z)))
+		for (i = 0; (i < maxSize) && (isCPBlock(world.getBlockState(pos.add(0, i, 0)).getBlock())); i++) {}
+		if (!isFrameBlock(world.getBlockState(pos.add(0, i, 0)).getBlock()))
 		{
 			zDir = false;
 			xDir = false;
 		}
-		for (i = 0; (i < maxSize) && (isCPBlock(world.getBlock(x, y - i, z))); i++) {}
-		if (!isFrameBlock(world.getBlock(x, y - i, z)))
+		for (i = 0; (i < maxSize) && (isCPBlock(world.getBlockState(pos.add(0, -i, 0)).getBlock())); i++) {}
+		if (!isFrameBlock(world.getBlockState(pos.add(0, -i, 0)).getBlock()))
 		{
 			zDir = false;
 			xDir = false;
 		}
-		for (i = 0; (i < maxSize) && (isCPBlock(world.getBlock(x, y, z + i))); i++) {}
-		if (!isFrameBlock(world.getBlock(x, y, z + i)))
+		for (i = 0; (i < maxSize) && (isCPBlock(world.getBlockState(pos.add(0, 0, i)).getBlock())); i++) {}
+		if (!isFrameBlock(world.getBlockState(pos.add(0, 0, i)).getBlock()))
 		{
 			xDir = false;
 			yDir = false;
 		}
-		for (i = 0; (i < maxSize) && (isCPBlock(world.getBlock(x, y, z - i))); i++) {}
-		if (!isFrameBlock(world.getBlock(x, y, z - i)))
+		for (i = 0; (i < maxSize) && (isCPBlock(world.getBlockState(pos.add(0, 0, -i)).getBlock())); i++) {}
+		if (!isFrameBlock(world.getBlockState(pos.add(0, 0, -i)).getBlock()))
 		{
 			xDir = false;
 			yDir = false;
@@ -669,7 +665,7 @@ public class ColourfulPortalsMod
 		CPLSet visited = new CPLSet();
 		Stack<ColourfulPortalLocation> toVisit = new Stack();
 
-		toVisit.push(new ColourfulPortalLocation(x, y, z, world.provider.dimensionId, getShiftedCPMetadata(world, x, y, z)));
+		toVisit.push(new ColourfulPortalLocation(pos, world.provider.getDimensionId(), getShiftedCPMetadata(world, pos)));
 
 		visited.add(toVisit.peek());
 		while (!toVisit.empty())
@@ -678,20 +674,21 @@ public class ColourfulPortalsMod
 			if (colourfulPortals.contains(current)) {
 				return current;
 			}
+			BlockPos currentPos = new BlockPos(current.xPos, current.yPos, current.zPos);
 			if ((zDir) || (xDir))
 			{
-				if (isCPBlock(world.getBlock(current.xPos, current.yPos + 1, current.zPos)))
+				if (isCPBlock(world.getBlockState(currentPos.add(0, 1, 0)).getBlock()))
 				{
-					ColourfulPortalLocation temp = new ColourfulPortalLocation(current.xPos, current.yPos + 1, current.zPos, world.provider.dimensionId, getShiftedCPMetadata(world, current.xPos, current.yPos + 1, current.zPos));
+					ColourfulPortalLocation temp = new ColourfulPortalLocation(currentPos.add(0, 1, 0), world.provider.getDimensionId(), getShiftedCPMetadata(world, currentPos.add(0, 1, 0)));
 					if (!visited.contains(temp))
 					{
 						toVisit.push(temp);
 						visited.add(temp);
 					}
 				}
-				if (isCPBlock(world.getBlock(current.xPos, current.yPos - 1, current.zPos)))
+				if (isCPBlock(world.getBlockState(currentPos.add(0, -1, 0)).getBlock()))
 				{
-					ColourfulPortalLocation temp = new ColourfulPortalLocation(current.xPos, current.yPos - 1, current.zPos, world.provider.dimensionId, getShiftedCPMetadata(world, current.xPos, current.yPos - 1, current.zPos));
+					ColourfulPortalLocation temp = new ColourfulPortalLocation(currentPos.add(0, -1, 0), world.provider.getDimensionId(), getShiftedCPMetadata(world, currentPos.add(0, -1, 0)));
 					if (!visited.contains(temp))
 					{
 						toVisit.push(temp);
@@ -701,18 +698,18 @@ public class ColourfulPortalsMod
 			}
 			if ((zDir) || (yDir))
 			{
-				if (isCPBlock(world.getBlock(current.xPos + 1, current.yPos, current.zPos)))
+				if (isCPBlock(world.getBlockState(currentPos.add(1, 0, 0)).getBlock()))
 				{
-					ColourfulPortalLocation temp = new ColourfulPortalLocation(current.xPos + 1, current.yPos, current.zPos, world.provider.dimensionId, getShiftedCPMetadata(world, current.xPos + 1, current.yPos, current.zPos));
+					ColourfulPortalLocation temp = new ColourfulPortalLocation(currentPos.add(1, 0, 0), world.provider.getDimensionId(), getShiftedCPMetadata(world, currentPos.add(1, 0, 0)));
 					if (!visited.contains(temp))
 					{
 						toVisit.push(temp);
 						visited.add(temp);
 					}
 				}
-				if (isCPBlock(world.getBlock(current.xPos - 1, current.yPos, current.zPos)))
+				if (isCPBlock(world.getBlockState(currentPos.add(-1, 0, 0)).getBlock()))
 				{
-					ColourfulPortalLocation temp = new ColourfulPortalLocation(current.xPos - 1, current.yPos, current.zPos, world.provider.dimensionId, getShiftedCPMetadata(world, current.xPos - 1, current.yPos, current.zPos));
+					ColourfulPortalLocation temp = new ColourfulPortalLocation(currentPos.add(-1, 0, 0), world.provider.getDimensionId(), getShiftedCPMetadata(world, currentPos.add(-1, 0, 0)));
 					if (!visited.contains(temp))
 					{
 						toVisit.push(temp);
@@ -722,18 +719,18 @@ public class ColourfulPortalsMod
 			}
 			if ((yDir) || (xDir))
 			{
-				if (isCPBlock(world.getBlock(current.xPos, current.yPos, current.zPos + 1)))
+				if (isCPBlock(world.getBlockState(currentPos.add(0, 0, 1)).getBlock()))
 				{
-					ColourfulPortalLocation temp = new ColourfulPortalLocation(current.xPos, current.yPos, current.zPos + 1, world.provider.dimensionId, getShiftedCPMetadata(world, current.xPos, current.yPos, current.zPos + 1));
+					ColourfulPortalLocation temp = new ColourfulPortalLocation(currentPos.add(0, 0, 1), world.provider.getDimensionId(), getShiftedCPMetadata(world, currentPos.add(0, 0, 1)));
 					if (!visited.contains(temp))
 					{
 						toVisit.push(temp);
 						visited.add(temp);
 					}
 				}
-				if (isCPBlock(world.getBlock(current.xPos, current.yPos, current.zPos - 1)))
+				if (isCPBlock(world.getBlockState(currentPos.add(0, 0, -1)).getBlock()))
 				{
-					ColourfulPortalLocation temp = new ColourfulPortalLocation(current.xPos, current.yPos, current.zPos - 1, world.provider.dimensionId, getShiftedCPMetadata(world, current.xPos, current.yPos, current.zPos - 1));
+					ColourfulPortalLocation temp = new ColourfulPortalLocation(currentPos.add(0, 0, -1), world.provider.getDimensionId(), getShiftedCPMetadata(world, currentPos.add(0, 0, -1)));
 					if (!visited.contains(temp))
 					{
 						toVisit.push(temp);
@@ -826,11 +823,11 @@ public class ColourfulPortalsMod
 				int dimension;
 				int portalMetadata;
 
-				public ColourfulPortalLocation(int x, int y, int z, int dim, int meta)
+				public ColourfulPortalLocation(BlockPos pos, int dim, int meta)
 				{
-					this.xPos = x;
-					this.yPos = y;
-					this.zPos = z;
+					this.xPos = pos.getX();
+					this.yPos = pos.getY();
+					this.zPos = pos.getZ();
 					this.dimension = dim;
 					this.portalMetadata = meta;
 				}

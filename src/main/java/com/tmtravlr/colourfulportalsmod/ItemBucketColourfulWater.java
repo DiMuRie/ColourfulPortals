@@ -1,22 +1,21 @@
 package com.tmtravlr.colourfulportalsmod;
 
-import cpw.mods.fml.common.eventhandler.Event;
-import cpw.mods.fml.common.eventhandler.Event.Result;
-import cpw.mods.fml.common.eventhandler.EventBus;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
 import java.util.List;
 import java.util.Random;
+
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
-import net.minecraft.client.renderer.texture.IIconRegister;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.entity.player.PlayerCapabilities;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.BlockPos;
 import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.MovingObjectPosition.MovingObjectType;
 import net.minecraft.util.StatCollector;
@@ -24,6 +23,8 @@ import net.minecraft.world.World;
 import net.minecraft.world.WorldProvider;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.player.FillBucketEvent;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class ItemBucketColourfulWater
   extends Item
@@ -44,7 +45,7 @@ public class ItemBucketColourfulWater
 
 
   @SideOnly(Side.CLIENT)
-  public boolean hasEffect(ItemStack par1ItemStack, int pass)
+  public boolean hasEffect(ItemStack stack)
   {
     return this.isEnchanted;
   }
@@ -64,62 +65,46 @@ public class ItemBucketColourfulWater
     }
   }
   
-  @SideOnly(Side.CLIENT)
-  public void registerIcons(IIconRegister iconRegister)
-  {
-    if (!this.isFull) {
-      this.itemIcon = iconRegister.registerIcon("colourfulportalsmod:bucketColourfulWaterFirst");
-    } else if (!this.isMixed) {
-      this.itemIcon = iconRegister.registerIcon("colourfulportalsmod:bucketColourfulWaterUnmixed");
-    } else {
-      this.itemIcon = iconRegister.registerIcon("colourfulportalsmod:bucketColourfulWater");
-    }
-  }
+//  @SideOnly(Side.CLIENT)
+//  public void registerIcons(IIconRegister iconRegister)
+//  {
+//    if (!this.isFull) {
+//      this.itemIcon = iconRegister.registerIcon("colourfulportalsmod:bucketColourfulWaterFirst");
+//    } else if (!this.isMixed) {
+//      this.itemIcon = iconRegister.registerIcon("colourfulportalsmod:bucketColourfulWaterUnmixed");
+//    } else {
+//      this.itemIcon = iconRegister.registerIcon("colourfulportalsmod:bucketColourfulWater");
+//    }
+//  }
   
   public ItemStack onItemRightClick(ItemStack itemStack, World world, EntityPlayer player)
   {
     if ((this.isMixed) && (this.isEnchanted))
     {
-      boolean flag = !this.isFull;
-      MovingObjectPosition movingobjectposition = getMovingObjectPositionFromPlayer(world, player, flag);
+      boolean empty = !this.isFull;
+      MovingObjectPosition movingobjectposition = getMovingObjectPositionFromPlayer(world, player, empty);
       if (movingobjectposition == null) {
         return itemStack;
       }
-      FillBucketEvent event = new FillBucketEvent(player, itemStack, world, movingobjectposition);
-      if (MinecraftForge.EVENT_BUS.post(event)) {
-        return itemStack;
-      }
-      if (event.getResult() == Event.Result.ALLOW)
-      {
-        if (player.capabilities.isCreativeMode) {
-          return itemStack;
-        }
-        if (--itemStack.stackSize <= 0) {
-          return event.result;
-        }
-        if (!player.inventory.addItemStackToInventory(event.result)) {
-          player.dropPlayerItemWithRandomChoice(event.result, false);
-        }
-        return itemStack;
-      }
+      
       if (movingobjectposition.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK)
       {
-        int i = movingobjectposition.blockX;
-        int j = movingobjectposition.blockY;
-        int k = movingobjectposition.blockZ;
-        if (!world.canMineBlock(player, i, j, k)) {
+    	  BlockPos pos = movingobjectposition.getBlockPos();
+    	  
+        if (!world.canMineBlockBody(player, pos)) {
           return itemStack;
         }
-        if (flag)
+        if (empty)
         {
-          if (!player.canPlayerEdit(i, j, k, movingobjectposition.sideHit, itemStack)) {
+          if (!player.canPlayerEdit(pos, movingobjectposition.sideHit, itemStack)) {
             return itemStack;
           }
-          Block block = world.getBlock(i, j, k);
-          int l = world.getBlockMetadata(i, j, k);
-          if (Block.getIdFromBlock(block) == Block.getIdFromBlock(ColourfulPortalsMod.colourfulWater))
+          IBlockState state = world.getBlockState(pos);
+          Block block = state.getBlock();
+          int l = block.getMetaFromState(state);
+          if (block == ColourfulPortalsMod.colourfulWater)
           {
-            world.setBlockToAir(i, j, k);
+            world.setBlockToAir(pos);
             if (player.capabilities.isCreativeMode) {
               return itemStack;
             }
@@ -137,28 +122,13 @@ public class ItemBucketColourfulWater
           if (!this.isFull) {
             return new ItemStack(ColourfulPortalsMod.bucketColourfulWaterEmpty);
           }
-          if (movingobjectposition.sideHit == 0) {
-            j--;
-          }
-          if (movingobjectposition.sideHit == 1) {
-            j++;
-          }
-          if (movingobjectposition.sideHit == 2) {
-            k--;
-          }
-          if (movingobjectposition.sideHit == 3) {
-            k++;
-          }
-          if (movingobjectposition.sideHit == 4) {
-            i--;
-          }
-          if (movingobjectposition.sideHit == 5) {
-            i++;
-          }
-          if (!player.canPlayerEdit(i, j, k, movingobjectposition.sideHit, itemStack)) {
+          
+          pos = pos.offset(movingobjectposition.sideHit);
+          
+          if (!player.canPlayerEdit(pos, movingobjectposition.sideHit, itemStack)) {
             return itemStack;
           }
-          if ((tryPlaceContainedColourfulLiquid(world, i, j, k)) && (!player.capabilities.isCreativeMode)) {
+          if ((tryPlaceContainedColourfulLiquid(world, pos)) && (!player.capabilities.isCreativeMode)) {
             return new ItemStack(ColourfulPortalsMod.bucketColourfulWaterEmpty);
           }
         }
@@ -189,29 +159,43 @@ public class ItemBucketColourfulWater
     return itemStack;
   }
   
-  public boolean tryPlaceContainedColourfulLiquid(World world, int x, int y, int z)
+  public boolean tryPlaceContainedColourfulLiquid(World world, BlockPos pos)
   {
     if (!this.isFull) {
       return false;
     }
-    if (((!world.isAirBlock(x, y, z)) && (world.getBlock(x, y, z).getMaterial().isSolid())) || (ColourfulPortalsMod.isCPBlock(world.getBlock(x, y, z)))) {
+    Block block = world.getBlockState(pos).getBlock();
+    Block frameBlock = world.getBlockState(pos.down()).getBlock();
+    if (((!world.isAirBlock(pos)) && (block.getMaterial().isSolid())) || (ColourfulPortalsMod.isCPBlock(block))) {
       return false;
     }
     boolean hasCreatedPortal = false;
-    if ((ColourfulPortalsMod.isFrameBlock(world.getBlock(x, y - 1, z))) && (!ColourfulPortalsMod.isCPBlock(world.getBlock(x, y, z))) && (ColourfulPortalsMod.canCreatePortal(world, x, y, z, ColourfulPortalsMod.getCPBlockByFrameBlock(world.getBlock(x, y - 1, z)), world.getBlockMetadata(x, y - 1, z)))) {
-      hasCreatedPortal = BlockColourfulPortal.tryToCreatePortal(world, x, y, z);
+    if (ColourfulPortalsMod.isFrameBlock(frameBlock) && !ColourfulPortalsMod.isCPBlock(block) && ColourfulPortalsMod.canCreatePortal(world, pos, ColourfulPortalsMod.getCPBlockByFrameBlock(frameBlock).getDefaultState())) {
+      hasCreatedPortal = BlockColourfulPortal.tryToCreatePortal(world, pos);
     }
     if (!hasCreatedPortal) {
-      if ((world.provider.isHellWorld) && (this.isFull))
+      if (world.provider.doesWaterVaporize())
       {
-        world.playSoundEffect(x + 0.5D, y + 0.5D, z + 0.5D, "random.fizz", 0.5F, 2.6F + (world.rand.nextFloat() - world.rand.nextFloat()) * 0.8F);
-        for (int var11 = 0; var11 < 8; var11++) {
-          world.spawnParticle("largesmoke", x + Math.random(), y + Math.random(), z + Math.random(), 0.0D, 0.0D, 0.0D);
-        }
+    	  int i = pos.getX();
+          int j = pos.getY();
+          int k = pos.getZ();
+          world.playSoundEffect((double)((float)i + 0.5F), (double)((float)j + 0.5F), (double)((float)k + 0.5F), "random.fizz", 0.5F, 2.6F + (world.rand.nextFloat() - world.rand.nextFloat()) * 0.8F);
+
+          for (int l = 0; l < 8; ++l)
+          {
+              world.spawnParticle(EnumParticleTypes.SMOKE_LARGE, (double)i + Math.random(), (double)j + Math.random(), (double)k + Math.random(), 0.0D, 0.0D, 0.0D, new int[0]);
+          }
       }
       else
       {
-        world.setBlock(x, y, z, this.isFull ? ColourfulPortalsMod.colourfulWater : Blocks.air, 0, 3);
+    	  Material material = world.getBlockState(pos).getBlock().getMaterial();
+    	  
+    	  if (!world.isRemote && !material.isSolid() && !material.isLiquid())
+          {
+              world.destroyBlock(pos, true);
+          }
+
+          world.setBlockState(pos, ColourfulPortalsMod.colourfulWater.getDefaultState(), 3);
       }
     }
     return true;

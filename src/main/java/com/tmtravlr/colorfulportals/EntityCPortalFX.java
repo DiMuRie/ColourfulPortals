@@ -1,18 +1,14 @@
-package com.tmtravlr.colourfulportalsmod;
+package com.tmtravlr.colorfulportals;
 
-import java.util.Random;
-
-import net.minecraft.client.particle.EntityFX;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.WorldRenderer;
+import net.minecraft.client.particle.Particle;
+import net.minecraft.client.renderer.VertexBuffer;
 import net.minecraft.entity.Entity;
 import net.minecraft.world.World;
-import net.minecraftforge.fml.relauncher.SideOnly;
 import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 @SideOnly(Side.CLIENT)
-public class EntityCPortalFX
-  extends EntityFX
+public class EntityCPortalFX extends Particle
 {
   private float portalParticleScale;
   private double portalPosX;
@@ -42,12 +38,13 @@ public class EntityCPortalFX
     this.particleGreen = (this.rand.nextFloat() * 0.5F);
     this.particleRed = (this.rand.nextFloat() * 0.7F + 0.3F);
     this.particleMaxAge = ((int)(Math.random() * 10.0D) + 40);
-    this.noClip = true;
+    this.field_190017_n = true;
+    this.particleGravity = 0.06F;
     setParticleTextureIndex((int)(Math.random() * 8.0D));
   }
   
   @Override
-  public void renderParticle(WorldRenderer renderer, Entity entity, float par2, float par3, float par4, float par5, float par6, float par7)
+  public void renderParticle(VertexBuffer renderer, Entity entity, float par2, float par3, float par4, float par5, float par6, float par7)
   {
     float scaleFactor = (this.particleAge + par2) / this.particleMaxAge;
     scaleFactor = 1.0F - scaleFactor;
@@ -74,7 +71,7 @@ public class EntityCPortalFX
   
   public float getBrightness(float par1)
   {
-    float f1 = super.getBrightness(par1);
+    float f1 = super.getBrightnessForRender(par1);
     float f2 = this.particleAge / this.particleMaxAge;
     f2 = f2 * f2 * f2 * f2;
     return f1 * (1.0F - f2) + f2;
@@ -93,7 +90,7 @@ public class EntityCPortalFX
     this.posY = (this.portalPosY + this.motionY * f + (1.0F - f1));
     this.posZ = (this.portalPosZ + this.motionZ * f);
     if (this.particleAge++ >= this.particleMaxAge) {
-      setDead();
+      this.setExpired();
     }
   }
 }

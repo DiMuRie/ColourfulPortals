@@ -1,14 +1,15 @@
 package com.tmtravlr.colourfulportalsmod;
 
-import cpw.mods.fml.common.FMLCommonHandler;
-import cpw.mods.fml.common.eventhandler.EventBus;
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.fml.common.FMLCommonHandler;
 
 public class CommonProxy
 {
@@ -17,6 +18,10 @@ public class CommonProxy
   public void registerSounds() {}
   
   public void registerRenderers() {}
+  
+  public TextureAtlasSprite registerTexture(ResourceLocation location) {
+	  return null;
+  }
   
   public void registerEventHandlers()
   {

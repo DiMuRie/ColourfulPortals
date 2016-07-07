@@ -22,7 +22,7 @@ public class ColourfulTeleporter
     this.z = zToSet;
   }
   
-  public void placeInPortal(Entity entity, double par2, double par4, double par6, float par8)
+  public void placeInPortal(Entity entity, float par8)
   {
     entity.setLocationAndAngles(this.x, this.y, this.z, entity.rotationYaw, 0.0F);
     entity.motionX = (entity.motionY = entity.motionZ = 0.0D);

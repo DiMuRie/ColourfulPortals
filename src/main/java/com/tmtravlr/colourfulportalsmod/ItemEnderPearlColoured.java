@@ -1,13 +1,13 @@
 package com.tmtravlr.colourfulportalsmod;
 
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
 import java.util.List;
-import net.minecraft.client.renderer.texture.IIconRegister;
+
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemEnderPearl;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.BlockPos;
 import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
 
@@ -32,24 +32,24 @@ public class ItemEnderPearlColoured
     list.add(EnumChatFormatting.ITALIC + StatCollector.translateToLocal("item.colourfulEnderPearl.info.4"));
   }
   
-  public boolean onItemUse(ItemStack itemStack, EntityPlayer player, World world, int x, int y, int z, int side, float par8, float par9, float par10)
+  public boolean onItemUse(ItemStack itemStack, EntityPlayer player, World world, BlockPos pos, EnumFacing side, float par8, float par9, float par10)
   {
-    if ((ColourfulPortalsMod.isCPBlock(world.getBlock(x, y, z))) && (!world.isRemote))
+    if ((ColourfulPortalsMod.isCPBlock(world.getBlockState(pos).getBlock())) && (!world.isRemote))
     {
       if (this.isReflective) {
-        BlockColourfulPortal.tryToCreateDestination(world, x, y, z, false);
+        BlockColourfulPortal.tryToCreateDestination(world, pos, world.getBlockState(pos), false);
       } else {
-        BlockColourfulPortal.tryToCreateDestination(world, x, y, z, true);
+        BlockColourfulPortal.tryToCreateDestination(world, pos, world.getBlockState(pos), true);
       }
       itemStack.stackSize -= 1;
       return true;
     }
-    return super.onItemUse(itemStack, player, world, x, y, z, side, par8, par9, par10);
+    return super.onItemUse(itemStack, player, world, pos, side, par8, par9, par10);
   }
   
-  @SideOnly(Side.CLIENT)
-  public void registerIcons(IIconRegister iconRegister)
-  {
-    this.itemIcon = iconRegister.registerIcon("colourfulPortalsMod:enderpearlColour" + (this.isReflective ? "Reflective" : ""));
-  }
+//  @SideOnly(Side.CLIENT)
+//  public void registerIcons(IIconRegister iconRegister)
+//  {
+//    this.itemIcon = iconRegister.registerIcon("colourfulPortalsMod:enderpearlColour" + (this.isReflective ? "Reflective" : ""));
+//  }
 }

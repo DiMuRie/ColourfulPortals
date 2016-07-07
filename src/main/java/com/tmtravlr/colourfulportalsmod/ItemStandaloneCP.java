@@ -6,7 +6,6 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumChatFormatting;
-import net.minecraft.util.IIcon;
 
 public class ItemStandaloneCP
 extends ItemBlock
@@ -19,10 +18,10 @@ extends ItemBlock
 		setHasSubtypes(true);
 	}
 
-	public IIcon getIconFromDamage(int meta)
-	{
-		return ColourfulPortalsMod.getFrameBlockByShiftedMetadata(ColourfulPortalsMod.getShiftedCPMetadata(Block.getBlockFromItem(this), meta)).getIcon(0, meta);
-	}
+//	public IIcon getIconFromDamage(int meta)
+//	{
+//		return ColourfulPortalsMod.getFrameBlockByShiftedMetadata(ColourfulPortalsMod.getShiftedCPMetadata(Block.getBlockFromItem(this), meta)).getIcon(0, meta);
+//	}
 
 	public int getMetadata(int meta)
 	{
@@ -33,7 +32,7 @@ extends ItemBlock
 	{
 		String frameDisplayName = "?";
 		try {
-			frameDisplayName = new ItemStack(ColourfulPortalsMod.getFrameBlockByShiftedMetadata(ColourfulPortalsMod.getShiftedCPMetadata(Block.getBlockFromItem(itemStack.getItem()), itemStack.getItemDamage())), 1, itemStack.getItemDamage()).getDisplayName();
+			frameDisplayName = new ItemStack(ColourfulPortalsMod.getFrameBlockByShiftedMetadata(ColourfulPortalsMod.getShiftedCPMetadata(Block.getBlockFromItem(itemStack.getItem()).getStateFromMeta(itemStack.getItemDamage()))), 1, itemStack.getItemDamage()).getDisplayName();
 		}
 		catch (Exception e) {
 			//Do nothing if an exception is thrown
