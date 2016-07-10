@@ -3,23 +3,22 @@ package com.tmtravlr.colourfulportalsmod;
 import java.util.List;
 import java.util.Random;
 
+import javax.annotation.Nullable;
+
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.particle.EffectRenderer;
-import net.minecraft.client.particle.EntityFX;
+import net.minecraft.client.particle.Particle;
 import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.AxisAlignedBB;
-import net.minecraft.util.BlockPos;
 import net.minecraft.util.EnumFacing;
-import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
-import net.minecraft.world.WorldProvider;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
@@ -30,8 +29,9 @@ public class BlockStandaloneCP
   //private IIcon[] iconArray;
   private static final boolean debug = false;
   public static final double HEIGHT = 0.8D;
+	protected static final AxisAlignedBB AABB_DIS = new AxisAlignedBB(0D, 0D, 0D, 1D, 0.8D, 1D);
   
-  public BlockStandaloneCP(String texture, Material material)
+  public BlockStandaloneCP(String texture,Material material)
   {
     super(texture, material);
     setCreativeTab(ColourfulPortalsMod.cpTab);
@@ -54,15 +54,16 @@ public class BlockStandaloneCP
     return true;
   }
   
-  @Override
-  public AxisAlignedBB getCollisionBoundingBox(World world, BlockPos pos, IBlockState state)
+	@Nullable
+	@Override
+  public AxisAlignedBB getCollisionBoundingBox(IBlockState blockState, World worldIn, BlockPos pos)
   {
-    return new AxisAlignedBB(pos, pos.add(1, 0.8D, 1));
+      return AABB_DIS;
   }
-  
-  public void setBlockBoundsBasedOnState(IBlockAccess iba, BlockPos pos)
+	@Override
+	public AxisAlignedBB getBoundingBox(IBlockState state, IBlockAccess source, BlockPos pos)
   {
-    setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 0.8F, 1.0F);
+		return AABB_DIS;
   }
   
   public boolean canRenderInPass(int pass)
@@ -96,7 +97,7 @@ public class BlockStandaloneCP
       if (rand.nextBoolean()) {
         zVel = -zVel;
       }
-      EntityFX entityfx = new EntityCPortalFX(world, x, y, z, xVel, yVel, zVel);
+      Particle entityfx = new EntityCPortalFX(world, x, y, z, xVel, yVel, zVel);
       Minecraft.getMinecraft().effectRenderer.addEffect(entityfx);
     }
   }
@@ -125,7 +126,7 @@ public class BlockStandaloneCP
 //    return this.blockIcon;
 //  }
   
-  public ItemStack getPickBlock(MovingObjectPosition target, World world, BlockPos pos)
+  public ItemStack getPickBlock(RayTraceResult target, World world, BlockPos pos)
   {
     return new ItemStack(this, 1, ColourfulPortalsMod.getMeta(world, pos));
   }
@@ -140,7 +141,7 @@ public class BlockStandaloneCP
       }
       else
       {
-        ColourfulPortalsMod.addPortalToList(new ColourfulPortalsMod.ColourfulPortalLocation(pos, world.provider.getDimensionId(), ColourfulPortalsMod.getShiftedCPMetadata(world, pos)));
+        ColourfulPortalsMod.addPortalToList(new ColourfulPortalsMod.ColourfulPortalLocation(pos, world.provider.getDimension(), ColourfulPortalsMod.getShiftedCPMetadata(world, pos)));
       }
     }
   }
@@ -148,7 +149,7 @@ public class BlockStandaloneCP
   public void breakBlock(World world, BlockPos pos, IBlockState state)
   {
     if (state.getBlock() == this) {
-      ColourfulPortalsMod.deletePortal(new ColourfulPortalsMod.ColourfulPortalLocation(pos, world.provider.getDimensionId(), ColourfulPortalsMod.getShiftedCPMetadata(world, pos)));
+      ColourfulPortalsMod.deletePortal(new ColourfulPortalsMod.ColourfulPortalLocation(pos, world.provider.getDimension(), ColourfulPortalsMod.getShiftedCPMetadata(world, pos)));
     }
   }
 }

@@ -4,6 +4,7 @@ import java.util.Random;
 
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.item.ItemBlock;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.fluids.BlockFluidClassic;
@@ -17,9 +18,10 @@ public class BlockColourfulWater extends BlockFluidClassic
 	{
 		super(ColourfulPortalsMod.colourfulFluid, Material.WATER);
 		this.setDefaultState(this.blockState.getBaseState().withProperty(LEVEL, Integer.valueOf(0)));
-		setUnlocalizedName("colourfulWater");
-		setRegistryName(this.getUnlocalizedName());
+		setUnlocalizedName("colourfulwater");
+		setRegistryName("colourfulwater");
 		GameRegistry.register(this);
+		GameRegistry.register(new ItemBlock(this).setRegistryName(this.getRegistryName()));
 		ColourfulPortalsMod.colourfulFluid.setBlock(this).setUnlocalizedName(getUnlocalizedName());
 	}
 
@@ -47,7 +49,8 @@ public class BlockColourfulWater extends BlockFluidClassic
 	@Override
 	public boolean displaceIfPossible(World world, BlockPos pos)
 	{
-		if (world.getBlockState(pos).getBlock().getMaterial() == Material.water) {
+		IBlockState state = world.getBlockState(pos);
+		if (world.getBlockState(pos).getBlock().getMaterial(state) == Material.WATER) {
 			return false;
 		}
 		return super.displaceIfPossible(world, pos);

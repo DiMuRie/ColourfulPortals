@@ -4,8 +4,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Random;
 import java.util.Stack;
+
+import javax.annotation.Nullable;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockBreakable;
@@ -13,6 +16,7 @@ import net.minecraft.block.material.Material;
 import net.minecraft.block.properties.PropertyEnum;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.particle.Particle;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityList;
 import net.minecraft.entity.EntityLivingBase;
@@ -20,15 +24,20 @@ import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
+import net.minecraft.init.MobEffects;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.potion.Potion;
+import net.minecraft.network.play.server.SPacketEntityEffect;
+import net.minecraft.network.play.server.SPacketRespawn;
+import net.minecraft.network.play.server.SPacketSetExperience;
 import net.minecraft.potion.PotionEffect;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.EnumFacing;
+import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.Teleporter;
 import net.minecraft.world.World;
@@ -46,12 +55,15 @@ extends BlockBreakable
 	private static final int PLAYER_MIN_DELAY = 0;
 	private static final int PLAYER_MAX_DELAY = 10;
 	private static LinkedList<Entity> entitiesTeleported = new LinkedList();
-	public static BlockColourfulPortal instance = new BlockColourfulPortal("", Material.portal);
+	public static BlockColourfulPortal instance = new BlockColourfulPortal("", Material.PORTAL);
 	private static int goCrazyX = -1;
 	private static int goCrazyY = -1;
 	private static int goCrazyZ = -1;
 	private static HashMap<Entity, Entity> toStack = new HashMap<Entity, Entity>();
 	private static int stackDelay = 0;
+	protected static final AxisAlignedBB AABB_X = new AxisAlignedBB(0D, 0D, 0.0625*6D, 1D, 1D, 0.0625*10D);
+	protected static final AxisAlignedBB AABB_Y = new AxisAlignedBB(0D, 0.625*6D, 0D, 1D, 0.625D, 1D);
+	protected static final AxisAlignedBB AABB_Z = new AxisAlignedBB(0.0625*6D, 0D, 0D, 0.625D, 1, 1D);
 
 	public BlockColourfulPortal(String texture, Material material)
 	{
@@ -67,27 +79,27 @@ extends BlockBreakable
         super.updateTick(worldIn, pos, state, rand);
 	}
 
+	@Nullable
 	@Override
-	public AxisAlignedBB getCollisionBoundingBox(World worldIn, BlockPos pos, IBlockState state)
+    public AxisAlignedBB getCollisionBoundingBox(IBlockState blockState, World worldIn, BlockPos pos)
     {
-        return null;
+        return NULL_AABB;
     }
-
 	@Override
-	public void setBlockBoundsBasedOnState(IBlockAccess iba, BlockPos pos)
-	{
-		float xDiff = 0.5F;
-		float zDiff = 0.5F;
-		float yDiff = 0.5F;
-		if ((!ColourfulPortalsMod.isPortalOrFrameBlock(iba, pos.add(-1, 0 ,0))) || (!ColourfulPortalsMod.isPortalOrFrameBlock(iba, pos.add(1, 0 ,0)))) {
-			xDiff = 0.125F;
-		} else if ((!ColourfulPortalsMod.isPortalOrFrameBlock(iba, pos.add(0, 0 ,-1))) || (!ColourfulPortalsMod.isPortalOrFrameBlock(iba, pos.add(0, 0 ,1)))) {
-			zDiff = 0.125F;
-		} else if ((!ColourfulPortalsMod.isPortalOrFrameBlock(iba, pos.add(0, -1 ,0))) || (!ColourfulPortalsMod.isPortalOrFrameBlock(iba, pos.add(0, 1 ,0)))) {
-			yDiff = 0.125F;
-		}
-		setBlockBounds(0.5F - xDiff, 0.5F - yDiff, 0.5F - zDiff, 0.5F + xDiff, 0.5F + yDiff, 0.5F + zDiff);
-	}
+	public AxisAlignedBB getBoundingBox(IBlockState state, IBlockAccess source, BlockPos pos)
+    {
+		EnumFacing.Axis axis = (EnumFacing.Axis)state.getValue(AXIS);
+        switch (axis)
+        {
+            case Z:
+                return AABB_Z;
+            case Y:
+                return AABB_Y;
+                default:
+            case X:
+                return AABB_X;
+        }
+    }
 
 	public boolean isOpaqueCube()
 	{
@@ -102,10 +114,8 @@ extends BlockBreakable
 	@Override
 	public void breakBlock(World world, BlockPos pos, IBlockState state)
 	{
-		ColourfulPortalsMod.deletePortal(new ColourfulPortalsMod.ColourfulPortalLocation(pos, world.provider.getDimensionId(), ColourfulPortalsMod.getShiftedCPMetadata(state)));
+		ColourfulPortalsMod.deletePortal(new ColourfulPortalsMod.ColourfulPortalLocation(pos, world.provider.getDimension(), ColourfulPortalsMod.getShiftedCPMetadata(state)));
 	}
-
-	@Override
 	public void onNeighborBlockChange(World world, BlockPos pos, IBlockState state, Block other)
 	{
 		boolean xDir = true;
@@ -154,7 +164,7 @@ extends BlockBreakable
 			ColourfulPortalsMod.CPLSet visited = new ColourfulPortalsMod.CPLSet();
 			Stack<ColourfulPortalsMod.ColourfulPortalLocation> toVisit = new Stack();
 
-			toVisit.push(new ColourfulPortalsMod.ColourfulPortalLocation(pos, world.provider.getDimensionId(), ColourfulPortalsMod.getShiftedCPMetadata(world, pos)));
+			toVisit.push(new ColourfulPortalsMod.ColourfulPortalLocation(pos, world.provider.getDimension(), ColourfulPortalsMod.getShiftedCPMetadata(world, pos)));
 
 			visited.add(toVisit.peek());
 			while (!toVisit.empty())
@@ -166,7 +176,7 @@ extends BlockBreakable
 					BlockPos currentPos = new BlockPos(current.xPos + disps[0], current.yPos + disps[1], current.zPos + disps[2]);
 					if (ColourfulPortalsMod.isFramedCPBlock(world.getBlockState(currentPos).getBlock()))
 					{
-						ColourfulPortalsMod.ColourfulPortalLocation temp = new ColourfulPortalsMod.ColourfulPortalLocation(currentPos, world.provider.getDimensionId(), ColourfulPortalsMod.getShiftedCPMetadata(world, currentPos));
+						ColourfulPortalsMod.ColourfulPortalLocation temp = new ColourfulPortalsMod.ColourfulPortalLocation(currentPos, world.provider.getDimension(), ColourfulPortalsMod.getShiftedCPMetadata(world, currentPos));
 						if (!visited.contains(temp))
 						{
 							toVisit.push(temp);
@@ -181,15 +191,8 @@ extends BlockBreakable
 		}
 	}
 
-	@Override
 	public boolean shouldSideBeRendered(IBlockAccess iba, BlockPos pos, EnumFacing side)
 	{		
-		if (((side == EnumFacing.DOWN) && (this.minY > 0.0D)) || ((side == EnumFacing.UP) && (this.maxY < 1.0D)) || ((side == EnumFacing.NORTH) && (this.minZ > 0.0D)) || ((side == EnumFacing.SOUTH) && (this.maxZ < 1.0D)) || ((side == EnumFacing.WEST) && (this.minX > 0.0D)) || ((side == EnumFacing.EAST) && (this.maxX < 1.0D))) {
-			return true;
-		}
-		if (ColourfulPortalsMod.isPortalOrFrameBlock(iba, pos)) {
-			return false;
-		}
 		return true;
 	}
 
@@ -232,13 +235,13 @@ extends BlockBreakable
 			z = pos.getZ() + 0.5F + 0.25F * dispZ;
 			zVel = rand.nextFloat() * 2.0F * dispZ;
 
-
-			EntityFX entityfx = new EntityCPortalFX(world, x, y, z, xVel, yVel, zVel, crazy);
-			Minecraft.getMinecraft().effectRenderer.addEffect(entityfx);
+			Particle particle = new EntityCPortalFX(world, x, y, z, xVel, yVel, zVel, crazy);
+			Minecraft.getMinecraft().effectRenderer.addEffect(particle);
 		}
+		
 	}
 
-	public ItemStack getPickBlock(MovingObjectPosition target, World world, BlockPos pos)
+	public ItemStack getPickBlock(RayTraceResult target, World world, BlockPos pos)
 	{
 		return null;
 	}
@@ -248,8 +251,8 @@ extends BlockBreakable
 		if ((entity instanceof EntityLivingBase))
 		{
 			EntityLivingBase livingEntity = (EntityLivingBase)entity;
-			if (livingEntity.getActivePotionEffect(Potion.confusion) == null) {}
-			livingEntity.addPotionEffect(new PotionEffect(Potion.confusion.id, 80, 0, true, false));
+			if (livingEntity.getActivePotionEffect(MobEffects.NAUSEA) == null) {}
+			livingEntity.addPotionEffect(new PotionEffect(MobEffects.NAUSEA, 80, 0, true, false));
 		}
 		
 		if (!world.isRemote)
@@ -274,8 +277,8 @@ extends BlockBreakable
 
 			//Find the bottom entity of the stack
 			
-			while(entity.ridingEntity != null) {
-				entity = entity.ridingEntity;
+			while(entity.getRidingEntity() != null) {
+				entity = entity.getRidingEntity();
 			}
 			
 			//Go through to the top entity of the stack
@@ -304,7 +307,7 @@ extends BlockBreakable
 					entitiesTeleported.add(entity);
 				}
 				
-				nextEntity = entity.riddenByEntity;
+				nextEntity = entity.getRidingEntity();
 			}
 			while(nextEntity != null);
 			
@@ -411,7 +414,7 @@ extends BlockBreakable
 					ColourfulPortalsMod.CPLSet visited = new ColourfulPortalsMod.CPLSet();
 					Stack<ColourfulPortalsMod.ColourfulPortalLocation> toVisit = new Stack();
 
-					toVisit.push(new ColourfulPortalsMod.ColourfulPortalLocation(pos, world.provider.getDimensionId(), ColourfulPortalsMod.getShiftedCPMetadata(world, pos)));
+					toVisit.push(new ColourfulPortalsMod.ColourfulPortalLocation(pos, world.provider.getDimension(), ColourfulPortalsMod.getShiftedCPMetadata(world, pos)));
 
 					visited.add(toVisit.peek());
 
@@ -424,7 +427,7 @@ extends BlockBreakable
 						{
 							Block nextBlock = world.getBlockState(currentPos.up()).getBlock();
 							int nextMeta = nextBlock.getMetaFromState(world.getBlockState(currentPos.up()));
-							if (((nextBlock != frameBlock) && (nextMeta != frameMeta) && (nextBlock != Blocks.air) && (nextBlock != ColourfulPortalsMod.colourfulWater)) || (Math.abs(current.xPos - x) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.yPos + 1 - y) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.zPos - z) > ColourfulPortalsMod.maxPortalSizeCheck)) {
+							if (((nextBlock != frameBlock) && (nextMeta != frameMeta) && (nextBlock != Blocks.AIR) && (nextBlock != ColourfulPortalsMod.colourfulWater)) || (Math.abs(current.xPos - x) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.yPos + 1 - y) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.zPos - z) > ColourfulPortalsMod.maxPortalSizeCheck)) {
 								if (xLook) {
 									dirs[0] = false;
 								} else if (zLook) {
@@ -433,7 +436,7 @@ extends BlockBreakable
 							}
 							nextBlock = world.getBlockState(currentPos.down()).getBlock();
 							nextMeta = nextBlock.getMetaFromState(world.getBlockState(currentPos.down()));
-							if (((nextBlock != frameBlock) && (nextMeta != frameMeta) && (nextBlock != Blocks.air) && (nextBlock != ColourfulPortalsMod.colourfulWater)) || (Math.abs(current.xPos - x) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.yPos - 1 - y) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.zPos - z) > ColourfulPortalsMod.maxPortalSizeCheck)) {
+							if (((nextBlock != frameBlock) && (nextMeta != frameMeta) && (nextBlock != Blocks.AIR) && (nextBlock != ColourfulPortalsMod.colourfulWater)) || (Math.abs(current.xPos - x) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.yPos - 1 - y) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.zPos - z) > ColourfulPortalsMod.maxPortalSizeCheck)) {
 								if (xLook) {
 									dirs[0] = false;
 								} else if (zLook) {
@@ -445,7 +448,7 @@ extends BlockBreakable
 						{
 							Block nextBlock = world.getBlockState(currentPos.east()).getBlock();
 							int nextMeta = nextBlock.getMetaFromState(world.getBlockState(currentPos.east()));
-							if (((nextBlock != frameBlock) && (nextMeta != frameMeta) && (nextBlock != Blocks.air) && (nextBlock != ColourfulPortalsMod.colourfulWater)) || (Math.abs(current.xPos - x) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.yPos - y) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.zPos + 1 - z) > ColourfulPortalsMod.maxPortalSizeCheck)) {
+							if (((nextBlock != frameBlock) && (nextMeta != frameMeta) && (nextBlock != Blocks.AIR) && (nextBlock != ColourfulPortalsMod.colourfulWater)) || (Math.abs(current.xPos - x) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.yPos - y) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.zPos + 1 - z) > ColourfulPortalsMod.maxPortalSizeCheck)) {
 								if (xLook) {
 									dirs[0] = false;
 								} else if (yLook) {
@@ -454,7 +457,7 @@ extends BlockBreakable
 							}
 							nextBlock = world.getBlockState(currentPos.west()).getBlock();
 							nextMeta = nextBlock.getMetaFromState(world.getBlockState(currentPos.west()));
-							if (((nextBlock != frameBlock) && (nextMeta != frameMeta) && (nextBlock != Blocks.air) && (nextBlock != ColourfulPortalsMod.colourfulWater)) || (Math.abs(current.xPos - x) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.yPos - y) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.zPos - 1 - z) > ColourfulPortalsMod.maxPortalSizeCheck)) {
+							if (((nextBlock != frameBlock) && (nextMeta != frameMeta) && (nextBlock != Blocks.AIR) && (nextBlock != ColourfulPortalsMod.colourfulWater)) || (Math.abs(current.xPos - x) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.yPos - y) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.zPos - 1 - z) > ColourfulPortalsMod.maxPortalSizeCheck)) {
 								if (xLook) {
 									dirs[0] = false;
 								} else if (yLook) {
@@ -466,7 +469,7 @@ extends BlockBreakable
 						{
 							Block nextBlock = world.getBlockState(currentPos.south()).getBlock();
 							int nextMeta = nextBlock.getMetaFromState(world.getBlockState(currentPos.south()));
-							if (((nextBlock != frameBlock) && (nextMeta != frameMeta) && (nextBlock != Blocks.air) && (nextBlock != ColourfulPortalsMod.colourfulWater)) || (Math.abs(current.xPos + 1 - x) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.yPos - y) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.zPos - z) > ColourfulPortalsMod.maxPortalSizeCheck)) {
+							if (((nextBlock != frameBlock) && (nextMeta != frameMeta) && (nextBlock != Blocks.AIR) && (nextBlock != ColourfulPortalsMod.colourfulWater)) || (Math.abs(current.xPos + 1 - x) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.yPos - y) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.zPos - z) > ColourfulPortalsMod.maxPortalSizeCheck)) {
 								if (yLook) {
 									dirs[1] = false;
 								} else if (zLook) {
@@ -475,7 +478,7 @@ extends BlockBreakable
 							}
 							nextBlock = world.getBlockState(currentPos.north()).getBlock();
 							nextMeta = nextBlock.getMetaFromState(world.getBlockState(currentPos.north()));
-							if (((nextBlock != frameBlock) && (nextMeta != frameMeta) && (nextBlock != Blocks.air) && (nextBlock != ColourfulPortalsMod.colourfulWater)) || (Math.abs(current.xPos - 1 - x) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.yPos - y) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.zPos - z) > ColourfulPortalsMod.maxPortalSizeCheck)) {
+							if (((nextBlock != frameBlock) && (nextMeta != frameMeta) && (nextBlock != Blocks.AIR) && (nextBlock != ColourfulPortalsMod.colourfulWater)) || (Math.abs(current.xPos - 1 - x) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.yPos - y) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.zPos - z) > ColourfulPortalsMod.maxPortalSizeCheck)) {
 								if (yLook) {
 									dirs[1] = false;
 								} else if (zLook) {
@@ -489,7 +492,7 @@ extends BlockBreakable
 							{
 								if (world.isAirBlock(currentPos.up()) || world.getBlockState(currentPos.up()).getBlock() == ColourfulPortalsMod.colourfulWater)
 								{
-									ColourfulPortalsMod.ColourfulPortalLocation temp = new ColourfulPortalsMod.ColourfulPortalLocation(currentPos.up(), world.provider.getDimensionId(), ColourfulPortalsMod.getShiftedCPMetadataByFrameBlock(frameState));
+									ColourfulPortalsMod.ColourfulPortalLocation temp = new ColourfulPortalsMod.ColourfulPortalLocation(currentPos.up(), world.provider.getDimension(), ColourfulPortalsMod.getShiftedCPMetadataByFrameBlock(frameState));
 									if (!visited.contains(temp))
 									{
 										toVisit.push(temp);
@@ -498,7 +501,7 @@ extends BlockBreakable
 								}
 								if (world.isAirBlock(currentPos.down()) || world.getBlockState(currentPos.down()).getBlock() == ColourfulPortalsMod.colourfulWater)
 								{
-									ColourfulPortalsMod.ColourfulPortalLocation temp = new ColourfulPortalsMod.ColourfulPortalLocation(currentPos.down(), world.provider.getDimensionId(), ColourfulPortalsMod.getShiftedCPMetadataByFrameBlock(frameState));
+									ColourfulPortalsMod.ColourfulPortalLocation temp = new ColourfulPortalsMod.ColourfulPortalLocation(currentPos.down(), world.provider.getDimension(), ColourfulPortalsMod.getShiftedCPMetadataByFrameBlock(frameState));
 									if (!visited.contains(temp))
 									{
 										toVisit.push(temp);
@@ -510,7 +513,7 @@ extends BlockBreakable
 							{
 								if (world.isAirBlock(currentPos.south()) || world.getBlockState(currentPos.south()).getBlock() == ColourfulPortalsMod.colourfulWater)
 								{
-									ColourfulPortalsMod.ColourfulPortalLocation temp = new ColourfulPortalsMod.ColourfulPortalLocation(currentPos.south(), world.provider.getDimensionId(), ColourfulPortalsMod.getShiftedCPMetadataByFrameBlock(frameState));
+									ColourfulPortalsMod.ColourfulPortalLocation temp = new ColourfulPortalsMod.ColourfulPortalLocation(currentPos.south(), world.provider.getDimension(), ColourfulPortalsMod.getShiftedCPMetadataByFrameBlock(frameState));
 									if (!visited.contains(temp))
 									{
 										toVisit.push(temp);
@@ -519,7 +522,7 @@ extends BlockBreakable
 								}
 								if (world.isAirBlock(currentPos.north()) || world.getBlockState(currentPos.north()).getBlock() == ColourfulPortalsMod.colourfulWater)
 								{
-									ColourfulPortalsMod.ColourfulPortalLocation temp = new ColourfulPortalsMod.ColourfulPortalLocation(currentPos.north(), world.provider.getDimensionId(), ColourfulPortalsMod.getShiftedCPMetadataByFrameBlock(frameState));
+									ColourfulPortalsMod.ColourfulPortalLocation temp = new ColourfulPortalsMod.ColourfulPortalLocation(currentPos.north(), world.provider.getDimension(), ColourfulPortalsMod.getShiftedCPMetadataByFrameBlock(frameState));
 									if (!visited.contains(temp))
 									{
 										toVisit.push(temp);
@@ -531,7 +534,7 @@ extends BlockBreakable
 							{
 								if (world.isAirBlock(currentPos.east()) || world.getBlockState(currentPos.east()).getBlock() == ColourfulPortalsMod.colourfulWater)
 								{
-									ColourfulPortalsMod.ColourfulPortalLocation temp = new ColourfulPortalsMod.ColourfulPortalLocation(currentPos.east(), world.provider.getDimensionId(), ColourfulPortalsMod.getShiftedCPMetadataByFrameBlock(frameState));
+									ColourfulPortalsMod.ColourfulPortalLocation temp = new ColourfulPortalsMod.ColourfulPortalLocation(currentPos.east(), world.provider.getDimension(), ColourfulPortalsMod.getShiftedCPMetadataByFrameBlock(frameState));
 									if (!visited.contains(temp))
 									{
 										toVisit.push(temp);
@@ -540,7 +543,7 @@ extends BlockBreakable
 								}
 								if (world.isAirBlock(currentPos.west()) || world.getBlockState(currentPos.west()).getBlock() == ColourfulPortalsMod.colourfulWater)
 								{
-									ColourfulPortalsMod.ColourfulPortalLocation temp = new ColourfulPortalsMod.ColourfulPortalLocation(currentPos.west(), world.provider.getDimensionId(), ColourfulPortalsMod.getShiftedCPMetadataByFrameBlock(frameState));
+									ColourfulPortalsMod.ColourfulPortalLocation temp = new ColourfulPortalsMod.ColourfulPortalLocation(currentPos.west(), world.provider.getDimension(), ColourfulPortalsMod.getShiftedCPMetadataByFrameBlock(frameState));
 									if (!visited.contains(temp))
 									{
 										toVisit.push(temp);
@@ -560,7 +563,7 @@ extends BlockBreakable
 						int shiftedMeta = ColourfulPortalsMod.getShiftedCPMetadata(world, pos);
 						boolean creationSuccess = true;
 						if (addLocationToList) {
-							creationSuccess = ColourfulPortalsMod.addPortalToList(new ColourfulPortalsMod.ColourfulPortalLocation(pos, world.provider.getDimensionId(), shiftedMeta));
+							creationSuccess = ColourfulPortalsMod.addPortalToList(new ColourfulPortalsMod.ColourfulPortalLocation(pos, world.provider.getDimension(), shiftedMeta));
 						}
 						return creationSuccess;
 					}
@@ -575,7 +578,7 @@ extends BlockBreakable
 		boolean creationSuccess = false;
 		if (!ColourfulPortalsMod.tooManyPortals(state))
 		{
-			ColourfulPortalsMod.ColourfulPortalLocation destination = createDestination(sameDim, world.provider.getDimensionId(), ColourfulPortalsMod.getShiftedCPMetadata(world, pos));
+			ColourfulPortalsMod.ColourfulPortalLocation destination = createDestination(sameDim, world.provider.getDimension(), ColourfulPortalsMod.getShiftedCPMetadata(world, pos), world, pos);
 			if (destination == null) {
 				return;
 			}
@@ -588,15 +591,17 @@ extends BlockBreakable
 		goCrazyX = pos.getX();
 		goCrazyY = pos.getY();
 		goCrazyZ = pos.getZ();
-		world.playSoundEffect(goCrazyX, goCrazyY, goCrazyZ, "colourfulportalsmod:teleport", 1.0F, soundPitch);
+		Random random = new Random();
+		world.playSound((double)pos.getX() + 0.5D, (double)pos.getY() + 0.5D, (double)pos.getZ() + 0.5D, ColorfulSounds.TELEPORT, SoundCategory.BLOCKS, 0.5F, random.nextFloat() * 0.4F + 0.8F, false);
 	}
 
-	private static ColourfulPortalsMod.ColourfulPortalLocation createDestination(boolean isSameDim, int oldDim, int meta)
+	private static ColourfulPortalsMod.ColourfulPortalLocation createDestination(boolean isSameDim, int oldDim, int meta, World world, BlockPos pos)
 	{
 		int unshiftedMeta = ColourfulPortalsMod.unshiftCPMetadata(meta);
 		Block portalBlock = ColourfulPortalsMod.getCPBlockByShiftedMetadata(meta);
 		Block frameBlock = ColourfulPortalsMod.getFrameBlockByShiftedMetadata(meta);
-
+		IBlockState state = world.getBlockState(pos);
+		
 		byte var2 = 16;
 		double var3 = -1.0D;
 
@@ -617,19 +622,19 @@ extends BlockBreakable
 		WorldServer worldServer;    
 		if (isSameDim)
 		{
-			worldServer = MinecraftServer.getServer().worldServerForDimension(oldDim);
+			worldServer = FMLCommonHandler.instance().getMinecraftServerInstance().worldServerForDimension(oldDim);
 			dimension = oldDim;
 		}
 		else
 		{
-			WorldServer[] wServers = MinecraftServer.getServer().worldServers;
+			WorldServer[] wServers = FMLCommonHandler.instance().getMinecraftServerInstance().worldServers;
 			int indexStart = rand.nextInt(wServers.length);
 			int index = indexStart;
 
 			worldServer = null;
 			do
 			{
-				if (ColourfulPortalsMod.isDimensionValidForDestination(wServers[index].provider.getDimensionId())) {
+				if (ColourfulPortalsMod.isDimensionValidForDestination(wServers[index].provider.getDimension())) {
 					worldServer = wServers[index];
 				}
 				index++;
@@ -640,7 +645,7 @@ extends BlockBreakable
 			if (worldServer == null) {
 				return null;
 			}
-			dimension = worldServer.provider.getDimensionId();
+			dimension = worldServer.provider.getDimension();
 		}
 		int var8 = var5;
 		int var9 = var6;
@@ -676,7 +681,7 @@ extends BlockBreakable
 											int var26 = var13 + (var24 - 1) * var21 + var23 * var22;
 											int var27 = var19 + var25;
 											int var28 = var16 + (var24 - 1) * var22 - var23 * var21;
-											if (((var25 < 0) && (!worldServer.getBlockState(new BlockPos(var26, var27, var28)).getBlock().getMaterial().isSolid())) || ((var25 >= 0) && (!worldServer.isAirBlock(new BlockPos(var26, var27, var28))))) {
+											if (((var25 < 0) && (!worldServer.getBlockState(new BlockPos(var26, var27, var28)).getBlock().getMaterial(state).isSolid())) || ((var25 >= 0) && (!worldServer.isAirBlock(new BlockPos(var26, var27, var28))))) {
 												break label609;
 											}
 										}
@@ -721,7 +726,7 @@ extends BlockBreakable
 											int var25 = var13 + (var23 - 1) * var21;
 											int var26 = var19 + var24;
 											int var27 = var16 + (var23 - 1) * var22;
-											if (((var24 < 0) && (!worldServer.getBlockState(new BlockPos(var25, var26, var27)).getBlock().getMaterial().isSolid())) || ((var24 >= 0) && (!worldServer.isAirBlock(new BlockPos(var25, var26, var27))))) {
+											if (((var24 < 0) && (!worldServer.getBlockState(new BlockPos(var25, var26, var27)).getBlock().getMaterial(state).isSolid())) || ((var24 >= 0) && (!worldServer.isAirBlock(new BlockPos(var25, var26, var27))))) {
 												break label957;
 											}
 										}
@@ -769,7 +774,7 @@ extends BlockBreakable
 						int var23 = var15 + var21;
 						int var24 = var16 + (var20 - 1) * var18 - var19 * var30;
 						boolean var33 = var21 < 0;
-						worldServer.setBlockState(new BlockPos(var22, var23, var24), var33 ? frameBlock.getStateFromMeta(unshiftedMeta) : Blocks.air.getDefaultState());
+						worldServer.setBlockState(new BlockPos(var22, var23, var24), var33 ? frameBlock.getStateFromMeta(unshiftedMeta) : Blocks.AIR.getDefaultState());
 					}
 				}
 			}
@@ -799,9 +804,10 @@ extends BlockBreakable
 		return new ColourfulPortalsMod.ColourfulPortalLocation(new BlockPos(var29, var15, var16), dimension, meta);
 	}
 
-	public static void playColourfulTeleportSound(World world, double x, double y, double z)
+	public static void playColourfulTeleportSound(World world, double x, double y, double z,BlockPos pos)
 	{
-		world.playSoundEffect(x, y, z, "colourfulportalsmod:teleport", 1.0F, 1.0F);
+		Random rand = new Random();
+		world.playSound((double)pos.getX() + 0.5D, (double)pos.getY() + 0.5D, (double)pos.getZ() + 0.5D, ColorfulSounds.TELEPORT, SoundCategory.BLOCKS, 0.5F, rand.nextFloat() * 0.4F + 0.8F, false);
 	}
 
 	private boolean entitySatisfiesTeleportConditions(World world, BlockPos pos, Entity entity)
@@ -819,18 +825,18 @@ extends BlockBreakable
 	{
 		ColourfulPortalsMod.ColourfulPortalLocation destination = ColourfulPortalsMod.getColourfulDestination(world, startPos);
 		//Make sure the dimension we are trying to teleport to exists first!
-		if(MinecraftServer.getServer().worldServerForDimension(destination.dimension) == null) {
+		if(FMLCommonHandler.instance().getMinecraftServerInstance().worldServerForDimension(destination.dimension) == null) {
 			return entity;
 		}
 		int meta = destination.portalMetadata;
 		double x = destination.xPos + 0.5D;
-		double y = destination.yPos + 0.1D + (ColourfulPortalsMod.isStandaloneCPBlock(MinecraftServer.getServer().worldServerForDimension(destination.dimension).getBlockState(new BlockPos(destination.xPos, destination.yPos, destination.zPos)).getBlock()) ? 1.0D : 0.0D);
+		double y = destination.yPos + 0.1D + (ColourfulPortalsMod.isStandaloneCPBlock(FMLCommonHandler.instance().getMinecraftServerInstance().worldServerForDimension(destination.dimension).getBlockState(new BlockPos(destination.xPos, destination.yPos, destination.zPos)).getBlock()) ? 1.0D : 0.0D);
 		double z = destination.zPos + 0.5D;
-		WorldServer newWorldServer = MinecraftServer.getServer().worldServerForDimension(destination.dimension);
+		WorldServer newWorldServer = FMLCommonHandler.instance().getMinecraftServerInstance().worldServerForDimension(destination.dimension);
 		
-		Entity ridingEntity = entity.ridingEntity;
+		Entity ridingEntity = entity.getRidingEntity();
 		if(ridingEntity != null) {
-			entity.mountEntity(null);
+			entity.dismountRidingEntity();
 			ridingEntity = teleportColourfully(world, startPos, ridingEntity);
 		}
 
@@ -840,7 +846,7 @@ extends BlockBreakable
 		EntityPlayerMP player = null;
 		if ((entity instanceof EntityPlayer))
 		{
-			Iterator iterator = MinecraftServer.getServer().getConfigurationManager().playerEntityList.iterator();
+			Iterator iterator = ((List<Entity>) FMLCommonHandler.instance().getMinecraftServerInstance().getPlayerList()).iterator();//.playerEntityList.iterator();
 			EntityPlayerMP entityplayermp = null;
 			do
 			{
@@ -878,7 +884,7 @@ extends BlockBreakable
 	{
 		int meta = destination.portalMetadata;
 		int dimension = destination.dimension;
-		int currentDimension = entity.worldObj.provider.getDimensionId();
+		int currentDimension = entity.worldObj.provider.getDimension();
 		if (dimension != currentDimension)
 		{
 			entitiesTeleported.remove(entity);
@@ -894,28 +900,30 @@ extends BlockBreakable
 	{
 		int meta = destination.portalMetadata;
 		int dimension = destination.dimension;
-		int currentDimension = player.worldObj.provider.getDimensionId();
+		int currentDimension = player.worldObj.provider.getDimension();
 		if (currentDimension != dimension)
 		{
 			if (!world.isRemote) {
 				if (currentDimension != 1) {
-					player.mcServer.getConfigurationManager().transferPlayerToDimension(player, dimension, new ColourfulTeleporter(player.mcServer.worldServerForDimension(dimension), x, y, z));
+					player.mcServer.getPlayerList().transferPlayerToDimension(player, dimension, new ColourfulTeleporter(player.mcServer.worldServerForDimension(dimension), x, y, z));
 				} else {
 					forceTeleportPlayerFromEnd(player, dimension, new ColourfulTeleporter(player.mcServer.worldServerForDimension(dimension), x, y, z));
 				}
-				player.playerNetServerHandler.sendPacket(new S1FPacketSetExperience(player.experience, player.experienceTotal, player.experienceLevel));				
+				player.connection.sendPacket(new SPacketSetExperience(player.experience, player.experienceTotal, player.experienceLevel));				
 			}
 		}
 		else {
-			player.playerNetServerHandler.setPlayerLocation(x, y, z, player.rotationYaw, player.rotationPitch);
+			player.connection.setPlayerLocation(x, y, z, player.rotationYaw, player.rotationPitch);
 			world.updateEntityWithOptionalForce(player, false);
 		}
 	}
 
 	private static void doAfterTeleportStuff(World world, double x, double y, double z, int meta, Entity entity, World newWorld, double newX, double newY, double newZ)
 	{
-		playColourfulTeleportSound(world, x, y, z);
-		playColourfulTeleportSound(newWorld, newX, newY, newZ);
+		BlockPos pos = new BlockPos(x,y,z);
+		BlockPos newPos = new BlockPos(newX,newY,newZ);
+		playColourfulTeleportSound(world, x, y, z, pos);
+		playColourfulTeleportSound(newWorld, newX, newY, newZ, newPos);
 		if (!entitiesTeleported.contains(entity)) {
 			entitiesTeleported.add(entity);
 		}
@@ -927,8 +935,8 @@ extends BlockBreakable
 		WorldServer worldServerOld = player.mcServer.worldServerForDimension(player.dimension);
 		player.dimension = newDimension;
 		WorldServer worldServerNew = player.mcServer.worldServerForDimension(player.dimension);
-		player.playerNetServerHandler.sendPacket(new S07PacketRespawn(player.dimension, player.worldObj.getDifficulty(), player.worldObj.getWorldInfo().getTerrainType(), player.theItemInWorldManager.getGameType()));
-		worldServerOld.removePlayerEntityDangerously(player);
+		player.connection.sendPacket(new SPacketRespawn(player.dimension, player.worldObj.getDifficulty(), player.worldObj.getWorldInfo().getTerrainType(), Minecraft.getMinecraft().playerController.getCurrentGameType()));
+		worldServerOld.removeEntityDangerously(player);
 		player.isDead = false;
 
 		WorldProvider pOld = worldServerOld.provider;
@@ -955,16 +963,16 @@ extends BlockBreakable
 
 		player.setWorld(worldServerNew);
 
-		player.mcServer.getConfigurationManager().preparePlayer(player, worldServerOld);
-		player.playerNetServerHandler.setPlayerLocation(player.posX, player.posY, player.posZ, player.rotationYaw, player.rotationPitch);
-		player.theItemInWorldManager.setWorld(worldServerNew);
-		player.mcServer.getConfigurationManager().updateTimeAndWeatherForPlayer(player, worldServerNew);
-		player.mcServer.getConfigurationManager().syncPlayerInventory(player);
+		player.mcServer.getPlayerList().preparePlayer(player, worldServerOld);
+		player.connection.setPlayerLocation(player.posX, player.posY, player.posZ, player.rotationYaw, player.rotationPitch);
+		player.setWorld(worldServerNew);
+		player.mcServer.getPlayerList().updateTimeAndWeatherForPlayer(player, worldServerNew);
+		player.mcServer.getPlayerList().syncPlayerInventory(player);
 		Iterator iterator = player.getActivePotionEffects().iterator();
 		while (iterator.hasNext())
 		{
 			PotionEffect potioneffect = (PotionEffect)iterator.next();
-			player.playerNetServerHandler.sendPacket(new S1DPacketEntityEffect(player.getEntityId(), potioneffect));
+			player.connection.sendPacket(new SPacketEntityEffect(player.getEntityId(), potioneffect));
 		}
 		FMLCommonHandler.instance().firePlayerChangedDimensionEvent(player, j, newDimension);
 	}
@@ -974,7 +982,7 @@ extends BlockBreakable
 		if (!toTeleport.isDead)
 		{
 			toTeleport.worldObj.theProfiler.startSection("changeDimension");
-			MinecraftServer minecraftserver = MinecraftServer.getServer();
+			MinecraftServer minecraftserver = FMLCommonHandler.instance().getMinecraftServerInstance();
 			int oldDimension = toTeleport.dimension;
 			WorldServer worldServerOld = minecraftserver.worldServerForDimension(oldDimension);
 			WorldServer worldServerNew = minecraftserver.worldServerForDimension(newDimension);
@@ -986,13 +994,14 @@ extends BlockBreakable
 			if (oldDimension == 1) {
 				forceTeleportEntityFromEnd(toTeleport, newDimension, new ColourfulTeleporter(worldServerOld, x, y, z), worldServerNew);
 			} else {
-				minecraftserver.getConfigurationManager().transferEntityToWorld(toTeleport, oldDimension, worldServerOld, worldServerNew, new ColourfulTeleporter(worldServerOld, x, y, z));
+				minecraftserver.getPlayerList().transferEntityToWorld(toTeleport, oldDimension, worldServerOld, worldServerNew, new ColourfulTeleporter(worldServerOld, x, y, z));
 			}
 			toTeleport.worldObj.theProfiler.endStartSection("reloading");
 			Entity entity = EntityList.createEntityByName(EntityList.getEntityString(toTeleport), worldServerNew);
 			if (entity != null)
 			{
-				entity.copyDataFromOld(toTeleport);
+				//entity.copyDataFromOld(toTeleport);
+				entity.getEntityData().copy();
 				worldServerNew.spawnEntityInWorld(entity);
 			}
 			toTeleport.isDead = true;
@@ -1062,7 +1071,7 @@ extends BlockBreakable
 				if(riding instanceof EntityPlayer) {
 					riding.worldObj.updateEntityWithOptionalForce(riding, true);
 				}
-				riding.mountEntity(mount);
+				riding.dismountRidingEntity();
 			}
 			
 			toStack.clear();

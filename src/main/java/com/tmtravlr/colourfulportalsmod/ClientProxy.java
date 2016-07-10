@@ -2,14 +2,13 @@ package com.tmtravlr.colourfulportalsmod;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintStream;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.fml.client.registry.RenderingRegistry;
+import net.minecraftforge.fml.common.FMLCommonHandler;
 
 public class ClientProxy
   extends CommonProxy
@@ -44,7 +43,7 @@ public class ClientProxy
   public File getSaveLocation()
     throws IOException
   {
-    File saveDirectory = new File(Minecraft.getMinecraft().mcDataDir, "saves/" + MinecraftServer.getServer().getFolderName());
+    File saveDirectory = new File(Minecraft.getMinecraft().mcDataDir, "saves/" + FMLCommonHandler.instance().getMinecraftServerInstance().getFolderName());
     saveDirectory.mkdir();
     
     return new File(saveDirectory, "colourful_portal_locations.dat");

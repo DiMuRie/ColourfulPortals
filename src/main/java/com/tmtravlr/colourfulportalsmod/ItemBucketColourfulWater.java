@@ -1,28 +1,20 @@
 package com.tmtravlr.colourfulportalsmod;
 
 import java.util.List;
-import java.util.Random;
+
+import com.mojang.realmsclient.gui.ChatFormatting;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.InventoryPlayer;
-import net.minecraft.entity.player.PlayerCapabilities;
-import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.BlockPos;
-import net.minecraft.util.EnumChatFormatting;
-import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumParticleTypes;
-import net.minecraft.util.MovingObjectPosition;
-import net.minecraft.util.MovingObjectPosition.MovingObjectType;
-import net.minecraft.util.StatCollector;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.RayTraceResult;
+import net.minecraft.util.text.translation.I18n;
 import net.minecraft.world.World;
-import net.minecraft.world.WorldProvider;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.entity.player.FillBucketEvent;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
@@ -54,14 +46,14 @@ public class ItemBucketColourfulWater
   {
     if (!this.isMixed)
     {
-      list.add(EnumChatFormatting.ITALIC + StatCollector.translateToLocal("item.bucketColourfulWaterUnmixed.info.1"));
-      list.add(EnumChatFormatting.ITALIC + String.valueOf(this.isEnchanted ? ColourfulPortalsMod.xpLevelRemixingCost : ColourfulPortalsMod.xpLevelMixingCost) + StatCollector.translateToLocal("item.bucketColourfulWaterUnmixed.info.2"));
+      list.add(ChatFormatting.ITALIC + I18n.translateToLocal("item.bucketColourfulWaterUnmixed.info.1"));
+      list.add(ChatFormatting.ITALIC + String.valueOf(this.isEnchanted ? ColourfulPortalsMod.xpLevelRemixingCost : ColourfulPortalsMod.xpLevelMixingCost) + I18n.translateToLocal("item.bucketColourfulWaterUnmixed.info.2"));
     }
     if ((this.isMixed) && (!this.isEnchanted) && (!this.isFull)) {
-      list.add(EnumChatFormatting.ITALIC + StatCollector.translateToLocal("item.bucketColourfulWaterFirst.info.1"));
+      list.add(ChatFormatting.ITALIC + I18n.translateToLocal("item.bucketColourfulWaterFirst.info.1"));
     }
     if (this.isEnchanted) {
-      list.add(StatCollector.translateToLocal("item.bucketColourfulWater.info.enchant"));
+      list.add(I18n.translateToLocal("item.bucketColourfulWater.info.enchant"));
     }
   }
   
@@ -82,12 +74,12 @@ public class ItemBucketColourfulWater
     if ((this.isMixed) && (this.isEnchanted))
     {
       boolean empty = !this.isFull;
-      MovingObjectPosition movingobjectposition = getMovingObjectPositionFromPlayer(world, player, empty);
+      RayTraceResult movingobjectposition = rayTrace(world, player, empty);
       if (movingobjectposition == null) {
         return itemStack;
       }
       
-      if (movingobjectposition.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK)
+      if (movingobjectposition.typeOfHit == RayTraceResult.Type.BLOCK)
       {
     	  BlockPos pos = movingobjectposition.getBlockPos();
     	  
@@ -112,7 +104,8 @@ public class ItemBucketColourfulWater
               return new ItemStack(ColourfulPortalsMod.bucketColourfulWater);
             }
             if (!player.inventory.addItemStackToInventory(new ItemStack(ColourfulPortalsMod.bucketColourfulWater))) {
-              player.dropPlayerItemWithRandomChoice(new ItemStack(ColourfulPortalsMod.bucketColourfulWater, 1, 0), false);
+              //player.dropPlayerItemWithRandomChoice(new ItemStack(ColourfulPortalsMod.bucketColourfulWater, 1, 0), false);
+              player.dropItem(new ItemStack(ColourfulPortalsMod.bucketColourfulWater, 1, 0), false);
             }
             return itemStack;
           }
@@ -150,7 +143,7 @@ public class ItemBucketColourfulWater
           return toReturn;
         }
         if (!player.inventory.addItemStackToInventory(toReturn)) {
-          player.dropPlayerItemWithRandomChoice(toReturn, false);
+          player.dropItem(toReturn, false);
         }
         return itemStack;
       }
@@ -161,12 +154,13 @@ public class ItemBucketColourfulWater
   
   public boolean tryPlaceContainedColourfulLiquid(World world, BlockPos pos)
   {
+	  IBlockState state = world.getBlockState(pos);
     if (!this.isFull) {
       return false;
     }
     Block block = world.getBlockState(pos).getBlock();
     Block frameBlock = world.getBlockState(pos.down()).getBlock();
-    if (((!world.isAirBlock(pos)) && (block.getMaterial().isSolid())) || (ColourfulPortalsMod.isCPBlock(block))) {
+    if (((!world.isAirBlock(pos)) && (block.getMaterial(state).isSolid())) || (ColourfulPortalsMod.isCPBlock(block))) {
       return false;
     }
     boolean hasCreatedPortal = false;
@@ -179,8 +173,8 @@ public class ItemBucketColourfulWater
     	  int i = pos.getX();
           int j = pos.getY();
           int k = pos.getZ();
-          world.playSoundEffect((double)((float)i + 0.5F), (double)((float)j + 0.5F), (double)((float)k + 0.5F), "random.fizz", 0.5F, 2.6F + (world.rand.nextFloat() - world.rand.nextFloat()) * 0.8F);
-
+          //world.playSound((double)((float)i + 0.5F), (double)((float)j + 0.5F), (double)((float)k + 0.5F), "random.fizz", 0.5F, 2.6F + (world.rand.nextFloat() - world.rand.nextFloat()) * 0.8F);
+//TmTravlr plz create an evaporate sound and put it in colorfulsounds
           for (int l = 0; l < 8; ++l)
           {
               world.spawnParticle(EnumParticleTypes.SMOKE_LARGE, (double)i + Math.random(), (double)j + Math.random(), (double)k + Math.random(), 0.0D, 0.0D, 0.0D, new int[0]);
@@ -188,7 +182,7 @@ public class ItemBucketColourfulWater
       }
       else
       {
-    	  Material material = world.getBlockState(pos).getBlock().getMaterial();
+    	  Material material = world.getBlockState(pos).getBlock().getMaterial(state);
     	  
     	  if (!world.isRemote && !material.isSolid() && !material.isLiquid())
           {

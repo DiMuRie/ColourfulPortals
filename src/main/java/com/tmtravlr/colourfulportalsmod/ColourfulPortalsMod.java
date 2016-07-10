@@ -36,6 +36,7 @@ import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.fluids.FluidContainerRegistry;
+import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.FMLLog;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.SidedProxy;
@@ -116,7 +117,7 @@ public class ColourfulPortalsMod
 	public void preInit(FMLPreInitializationEvent event)
 	{
 		colourfulPortalsMod = this;
-		boolean addColourfulWaterToDungeonChests = true;
+		//boolean addColourfulWaterToDungeonChests = true;
 
 		Configuration config = new Configuration(event.getSuggestedConfigurationFile());
 
@@ -129,7 +130,7 @@ public class ColourfulPortalsMod
 		xpLevelMixingCost = config.getInt("Number of XP Levels Needed to Mix Colourful Water", "other", 5, 0, Integer.MAX_VALUE, "Levels of XP you need to mix the colourful water from a bucket of dyes.");
 		xpLevelRemixingCost = config.getInt("Number of XP Levels Needed to Re-Mix Colourful Water", "other", 2, 0, Integer.MAX_VALUE, "Levels of XP that you need to mix the partially enchanted bucket of dyes.");
 		xpBottleCrafting = config.getBoolean("Allow crafting of colourful water with XP bottles (for automation)", "other", false, "Adds a crafting recipe for the colourful water using XP bottles.");
-		addColourfulWaterToDungeonChests = config.getBoolean("Add Buckets of Colourful Water to Dungeon Chests?", "other", true, "If set to true, full and empty buckets of colourful water will occasionally spawn in chests.");
+		//addColourfulWaterToDungeonChests = config.getBoolean("Add Buckets of Colourful Water to Dungeon Chests?", "other", true, "If set to true, full and empty buckets of colourful water will occasionally spawn in chests.");
 		if (xpLevelRemixingCost > xpLevelMixingCost) {
 			xpLevelRemixingCost = xpLevelMixingCost;
 		}
@@ -161,122 +162,42 @@ public class ColourfulPortalsMod
 		String[] defaultPortalTypes = { "wool", "stained_hardened_clay", "stained_glass" };
 		//No support for custom portal types at the moment!
 		frameBlockNames = defaultPortalTypes;//= config.get("portal_frame_types", "Portal Frame Blocks", defaultPortalTypes).getStringList();
-		bucketColourfulWaterEmpty = new ItemBucketColourfulWater(true, true, false).setUnlocalizedName("bucketColourfulWaterEmpty");
-		bucketColourfulWater = new ItemBucketColourfulWater(true, true, true).setUnlocalizedName("bucketColourfulWater");
-		bucketColourfulWaterUnmixed = new ItemBucketColourfulWater(false, false, true).setUnlocalizedName("bucketColourfulWaterUnmixed");
-		bucketColourfulWaterPartMixed = new ItemBucketColourfulWater(true, false, true).setUnlocalizedName("bucketColourfulWaterPartMixed");
-		bucketColourfulWaterFirst = new ItemBucketColourfulWater(false, true, false).setUnlocalizedName("bucketColourfulWaterFirst");
-		enderPearlColoured = new ItemEnderPearlColoured(false);
-		enderPearlColouredReflective = new ItemEnderPearlColoured(true);
+		bucketColourfulWaterEmpty = new ItemBucketColourfulWater(true, true, false).setUnlocalizedName("bucketColourfulWaterEmpty").setRegistryName("bucketColourfulWaterEmpty");
+		bucketColourfulWater = new ItemBucketColourfulWater(true, true, true).setUnlocalizedName("bucketColourfulWater").setRegistryName("bucketColourfulWater");
+		bucketColourfulWaterUnmixed = new ItemBucketColourfulWater(false, false, true).setUnlocalizedName("bucketColourfulWaterUnmixed").setRegistryName("bucketColourfulWaterUnmixed");
+		bucketColourfulWaterPartMixed = new ItemBucketColourfulWater(true, false, true).setUnlocalizedName("bucketColourfulWaterPartMixed").setRegistryName("bucketColourfulWaterPartMixed");
+		bucketColourfulWaterFirst = new ItemBucketColourfulWater(false, true, false).setUnlocalizedName("bucketColourfulWaterFirst").setRegistryName("bucketColourfulWaterFirst");
+		enderPearlColoured = new ItemEnderPearlColoured(false).setRegistryName("colourfulEnderPearl");
+		enderPearlColouredReflective = new ItemEnderPearlColoured(true).setRegistryName("colourfulEnderPearlReflective");
 		colourfulWater = new BlockColourfulWater().setDensity(colourfulFluid.getDensity()).setHardness(100.0F).setLightOpacity(3);
 		
 		config.save();
 
-		GameRegistry.registerItem(bucketColourfulWaterEmpty, bucketColourfulWaterEmptyId);
-		GameRegistry.registerItem(bucketColourfulWater, bucketColourfulWaterId);
-		GameRegistry.registerItem(bucketColourfulWaterUnmixed, bucketColourfulWaterUnmixedId);
-		GameRegistry.registerItem(bucketColourfulWaterPartMixed, bucketColourfulWaterPartMixedId);
-		GameRegistry.registerItem(bucketColourfulWaterFirst, bucketColourfulWaterFirstId);
-		GameRegistry.registerItem(enderPearlColoured, colourfulEnderPearlId);
-		GameRegistry.registerItem(enderPearlColouredReflective, colourfulEnderPearlReflectiveId);
+		GameRegistry.register(bucketColourfulWaterEmpty);
+		GameRegistry.register(bucketColourfulWater);
+		GameRegistry.register(bucketColourfulWaterUnmixed);
+		GameRegistry.register(bucketColourfulWaterPartMixed);
+		GameRegistry.register(bucketColourfulWaterFirst);
+		GameRegistry.register(enderPearlColoured);
+		GameRegistry.register(enderPearlColouredReflective);
 
-		GameRegistry.registerBlock(colourfulWater, colourfulWaterId);
+		//GameRegistry.registerBlock(colourfulWater, colourfulWaterId);
 		FluidContainerRegistry.registerFluidContainer(colourfulFluid, new ItemStack(bucketColourfulWater), new ItemStack(bucketColourfulWaterEmpty));
-
-
-		BlockDispenser.dispenseBehaviorRegistry.putObject(bucketColourfulWaterEmpty, new BehaviorDefaultDispenseItem()
-		{
-			private final BehaviorDefaultDispenseItem field_150840_b = new BehaviorDefaultDispenseItem();
-			
-			public ItemStack dispenseStack(IBlockSource blockSource, ItemStack itemStack)
-			{
-				EnumFacing enumfacing = BlockDispenser.getFacing(blockSource.getBlockMetadata());
-				World world = blockSource.getWorld();
-				int x = MathHelper.floor_double(blockSource.getX() + enumfacing.getFrontOffsetX());
-				int y = MathHelper.floor_double(blockSource.getY() + enumfacing.getFrontOffsetY());
-				int z = MathHelper.floor_double(blockSource.getZ() + enumfacing.getFrontOffsetZ());
-				BlockPos pos = new BlockPos(x, y, z);
-				int meta = getMeta(world, pos);
-				Item item = itemStack.getItem();
-				if ((world.getBlockState(pos) == ColourfulPortalsMod.colourfulWater) && (meta == 0)) {
-					item = ColourfulPortalsMod.bucketColourfulWater;
-				} else {
-					return super.dispenseStack(blockSource, itemStack);
-				}
-				world.setBlockToAir(pos);
-				if (--itemStack.stackSize == 0)
-				{
-					itemStack.setItem(item);
-					itemStack.stackSize = 1;
-				}
-				else if (((TileEntityDispenser)blockSource.getBlockTileEntity()).addItemStack(new ItemStack(item)) < 0)
-				{
-					this.field_150840_b.dispense(blockSource, new ItemStack(item));
-				}
-				return itemStack;
-			}
-		});
-		BlockDispenser.dispenseBehaviorRegistry.putObject(bucketColourfulWater, new BehaviorDefaultDispenseItem()
-		{
-			private final BehaviorDefaultDispenseItem field_150840_b = new BehaviorDefaultDispenseItem();
-			
-			public ItemStack dispenseStack(IBlockSource blockSource, ItemStack itemStack)
-			{
-				EnumFacing enumfacing = BlockDispenser.getFacing(blockSource.getBlockMetadata());
-				World world = blockSource.getWorld();
-				int x = MathHelper.floor_double(blockSource.getX() + enumfacing.getFrontOffsetX());
-				int y = MathHelper.floor_double(blockSource.getY() + enumfacing.getFrontOffsetY());
-				int z = MathHelper.floor_double(blockSource.getZ() + enumfacing.getFrontOffsetZ());
-				int meta = getMeta(world, new BlockPos(x, y, z));
-				Item item = itemStack.getItem();
-				if ((world.isAirBlock(new BlockPos(x, y, z))) && (meta == 0)) {
-					item = ColourfulPortalsMod.bucketColourfulWaterEmpty;
-				} else {
-					return super.dispenseStack(blockSource, itemStack);
-				}
-				world.setBlockState(new BlockPos(x, y, z), ColourfulPortalsMod.colourfulWater.getDefaultState());
-				if (--itemStack.stackSize == 0)
-				{
-					itemStack.setItem(item);
-					itemStack.stackSize = 1;
-				}
-				else if (((TileEntityDispenser)blockSource.getBlockTileEntity()).addItemStack(new ItemStack(item)) < 0)
-				{
-					this.field_150840_b.dispense(blockSource, new ItemStack(item));
-				}
-				return itemStack;
-			}
-		});
-		if (addColourfulWaterToDungeonChests)
-		{
-			ChestGenHooks.getInfo("pyramidDesertyChest").addItem(new WeightedRandomChestContent(bucketColourfulWaterEmpty, 0, 1, 1, 3));
-			ChestGenHooks.getInfo("pyramidJungleChest").addItem(new WeightedRandomChestContent(bucketColourfulWaterEmpty, 0, 1, 1, 2));
-			ChestGenHooks.getInfo("strongholdCrossing").addItem(new WeightedRandomChestContent(bucketColourfulWaterEmpty, 0, 1, 1, 1));
-			ChestGenHooks.getInfo("strongholdCorridor").addItem(new WeightedRandomChestContent(bucketColourfulWaterEmpty, 0, 1, 1, 1));
-			ChestGenHooks.getInfo("dungeonChest").addItem(new WeightedRandomChestContent(bucketColourfulWaterEmpty, 0, 1, 1, 1));
-
-			ChestGenHooks.getInfo("pyramidDesertyChest").addItem(new WeightedRandomChestContent(bucketColourfulWater, 0, 1, 1, 2));
-			ChestGenHooks.getInfo("pyramidJungleChest").addItem(new WeightedRandomChestContent(bucketColourfulWater, 0, 1, 1, 1));
-			ChestGenHooks.getInfo("strongholdCrossing").addItem(new WeightedRandomChestContent(bucketColourfulWater, 0, 1, 1, 1));
-			ChestGenHooks.getInfo("strongholdCorridor").addItem(new WeightedRandomChestContent(bucketColourfulWater, 0, 1, 1, 1));
-			ChestGenHooks.getInfo("dungeonChest").addItem(new WeightedRandomChestContent(bucketColourfulWater, 0, 1, 1, 1));
-		}
 	}
 
 	@Mod.EventHandler
-	public void load(FMLInitializationEvent event)
+	public void load(FMLInitializationEvent event, IBlockState IBlockState)
 	{
 		for (int i = 0; i < frameBlockNames.length; i++)
 		{
 			Block frameBlock = Block.getBlockFromName(frameBlockNames[i]);
 			
-			if(frameBlock == null || frameBlock == Blocks.air) {
+			if(frameBlock == null || frameBlock == Blocks.AIR) {
 				FMLLog.warning("[Colourful Portals] Error! Couldn't find a block with name '" + frameBlockNames[i] + "'!");
 				continue;
 			}
-			
-			cpBlocks.put(i, (BlockColourfulPortal)new BlockColourfulPortal("portal_colour", Material.portal).setHardness(-1.0F).setStepSound(Block.soundTypeGlass).setLightLevel(0.75F).setUnlocalizedName("colourfulPortal"));
-			scpBlocks.put(i, (BlockStandaloneCP)new BlockStandaloneCP("portal_colour", frameBlock.getMaterial()).setHardness(0.8F).setStepSound(frameBlock.stepSound).setLightLevel(0.75F).setUnlocalizedName("standaloneColourfulPortal"));
+			cpBlocks.put(i, (BlockColourfulPortal)new BlockColourfulPortal("portal_colour", Material.PORTAL).setHardness(-1.0F).setLightLevel(0.75F).setUnlocalizedName("colourfulPortal"));
+			scpBlocks.put(i, (BlockStandaloneCP)new BlockStandaloneCP("portal_colour", frameBlock.getMaterial(IBlockState)).setHardness(0.8F).setLightLevel(0.75F).setUnlocalizedName("standaloneColourfulPortal"));
 			frameBlocks.put(i, frameBlock);
 			
 			int colonIndex = frameBlockNames[i].indexOf(":");
@@ -292,6 +213,7 @@ public class ColourfulPortalsMod
 		{
 			GameRegistry.registerBlock((Block)cpBlocks.get(i), colourfulPortalIdPrefix + frameNames.get(i));
 			GameRegistry.registerBlock((Block)scpBlocks.get(i), ItemStandaloneCP.class, standaloneCPIdPrefix + frameNames.get(i));
+			GameRegistry.register((Block)cpBlocks.get(i));
 		}
 
 		
@@ -304,18 +226,18 @@ public class ColourfulPortalsMod
 				GameRegistry.addRecipe(sCPStack, new Object[] { "WWW", "WBW", "WWW", Character.valueOf('W'), frame, Character.valueOf('B'), bucketColourfulWater });
 			}
 		}
-		GameRegistry.addRecipe(new ShapelessOreRecipe(new ItemStack(bucketColourfulWaterPartMixed, 1), new Object[] { Items.water_bucket, bucketColourfulWaterEmpty, "dyeBlack", "dyeRed", "dyeGreen", "dyeBrown", "dyeBlue", "dyeYellow", "dyeWhite" }));
-		GameRegistry.addRecipe(new ShapelessOreRecipe(new ItemStack(bucketColourfulWaterUnmixed, 1), new Object[] { Items.water_bucket, bucketColourfulWaterFirst, "dyeBlack", "dyeRed", "dyeGreen", "dyeBrown", "dyeBlue", "dyeYellow", "dyeWhite" }));
-		GameRegistry.addRecipe(new ShapelessOreRecipe(new ItemStack(enderPearlColoured, 1), new Object[] { Items.ender_pearl, "dyeBlack", "dyeRed", "dyeGreen", "dyeBrown", "dyeBlue", "dyeYellow", "dyeWhite" }));
-		GameRegistry.addRecipe(new ItemStack(bucketColourfulWaterFirst, 1), new Object[] { "G", "B", Character.valueOf('G'), Items.gold_ingot, Character.valueOf('B'), Items.bucket });
-		GameRegistry.addRecipe(new ItemStack(bucketColourfulWaterFirst, 1), new Object[] { "IGI", " I ", Character.valueOf('G'), Items.gold_ingot, Character.valueOf('I'), Items.iron_ingot });
-		GameRegistry.addRecipe(new ItemStack(enderPearlColouredReflective, 1), new Object[] { " Q ", "QPQ", " Q ", Character.valueOf('Q'), Items.quartz, Character.valueOf('P'), enderPearlColoured });
+		GameRegistry.addRecipe(new ShapelessOreRecipe(new ItemStack(bucketColourfulWaterPartMixed, 1), new Object[] { Items.WATER_BUCKET, bucketColourfulWaterEmpty, "dyeBlack", "dyeRed", "dyeGreen", "dyeBrown", "dyeBlue", "dyeYellow", "dyeWhite" }));
+		GameRegistry.addRecipe(new ShapelessOreRecipe(new ItemStack(bucketColourfulWaterUnmixed, 1), new Object[] { Items.WATER_BUCKET, bucketColourfulWaterFirst, "dyeBlack", "dyeRed", "dyeGreen", "dyeBrown", "dyeBlue", "dyeYellow", "dyeWhite" }));
+		GameRegistry.addRecipe(new ShapelessOreRecipe(new ItemStack(enderPearlColoured, 1), new Object[] { Items.ENDER_PEARL, "dyeBlack", "dyeRed", "dyeGreen", "dyeBrown", "dyeBlue", "dyeYellow", "dyeWhite" }));
+		GameRegistry.addRecipe(new ItemStack(bucketColourfulWaterFirst, 1), new Object[] { "G", "B", Character.valueOf('G'), Items.GOLD_INGOT, Character.valueOf('B'), Items.BUCKET });
+		GameRegistry.addRecipe(new ItemStack(bucketColourfulWaterFirst, 1), new Object[] { "IGI", " I ", Character.valueOf('G'), Items.GOLD_INGOT, Character.valueOf('I'), Items.IRON_INGOT });
+		GameRegistry.addRecipe(new ItemStack(enderPearlColouredReflective, 1), new Object[] { " Q ", "QPQ", " Q ", Character.valueOf('Q'), Items.QUARTZ, Character.valueOf('P'), enderPearlColoured });
 		GameRegistry.addShapelessRecipe(new ItemStack(bucketColourfulWaterFirst), new Object[] { new ItemStack(bucketColourfulWaterEmpty) });
-		GameRegistry.addShapelessRecipe(new ItemStack(Items.bucket), new Object[] { new ItemStack(bucketColourfulWaterFirst) });
+		GameRegistry.addShapelessRecipe(new ItemStack(Items.BUCKET), new Object[] { new ItemStack(bucketColourfulWaterFirst) });
 		
 		if(xpBottleCrafting) {
-			GameRegistry.addShapelessRecipe(new ItemStack(bucketColourfulWater), new Object[] {new ItemStack(bucketColourfulWaterUnmixed), new ItemStack(Items.experience_bottle),new ItemStack(Items.experience_bottle),new ItemStack(Items.experience_bottle),new ItemStack(Items.experience_bottle),new ItemStack(Items.experience_bottle),new ItemStack(Items.experience_bottle),new ItemStack(Items.experience_bottle),new ItemStack(Items.experience_bottle)});
-			GameRegistry.addShapelessRecipe(new ItemStack(bucketColourfulWater), new Object[] {new ItemStack(bucketColourfulWaterPartMixed), new ItemStack(Items.experience_bottle),new ItemStack(Items.experience_bottle),new ItemStack(Items.experience_bottle),new ItemStack(Items.experience_bottle)});
+			GameRegistry.addShapelessRecipe(new ItemStack(bucketColourfulWater), new Object[] {new ItemStack(bucketColourfulWaterUnmixed), new ItemStack(Items.EXPERIENCE_BOTTLE),new ItemStack(Items.EXPERIENCE_BOTTLE),new ItemStack(Items.EXPERIENCE_BOTTLE),new ItemStack(Items.EXPERIENCE_BOTTLE),new ItemStack(Items.EXPERIENCE_BOTTLE),new ItemStack(Items.EXPERIENCE_BOTTLE),new ItemStack(Items.EXPERIENCE_BOTTLE),new ItemStack(Items.EXPERIENCE_BOTTLE)});
+			GameRegistry.addShapelessRecipe(new ItemStack(bucketColourfulWater), new Object[] {new ItemStack(bucketColourfulWaterPartMixed), new ItemStack(Items.EXPERIENCE_BOTTLE),new ItemStack(Items.EXPERIENCE_BOTTLE),new ItemStack(Items.EXPERIENCE_BOTTLE),new ItemStack(Items.EXPERIENCE_BOTTLE)});
 		}
 
 		proxy.registerSounds();
@@ -489,7 +411,7 @@ public class ColourfulPortalsMod
 		if (tooManyPortals(state)) {
 			return false;
 		}
-		if (!isDimensionValidAtAll(world.provider.getDimensionId())) {
+		if (!isDimensionValidAtAll(world.provider.getDimension())) {
 			return false;
 		}
 		return true;
@@ -566,7 +488,7 @@ public class ColourfulPortalsMod
 		ArrayList<ColourfulPortalLocation> toDelete = new ArrayList();
 		for (ColourfulPortalLocation portal : colourfulPortals)
 		{
-			WorldServer currentWS = MinecraftServer.getServer().worldServerForDimension(portal.dimension);
+			WorldServer currentWS = FMLCommonHandler.instance().getMinecraftServerInstance().worldServerForDimension(portal.dimension);
 			BlockPos currentPos = new BlockPos(portal.xPos, portal.yPos, portal.zPos);
 			if ((getCPBlockByShiftedMetadata(portal.portalMetadata) != currentWS.getBlockState(currentPos).getBlock()) && (getStandaloneCPBlockByShiftedMetadata(portal.portalMetadata) != currentWS.getBlockState(currentPos).getBlock())) {
 				if (!BlockColourfulPortal.tryToCreatePortal(currentWS, currentPos, false)) {
@@ -589,7 +511,7 @@ public class ColourfulPortalsMod
 
 			int originalPos = colourfulPortals.indexOf(start);
 			if (originalPos == -1) {
-				return new ColourfulPortalLocation(pos, world.provider.getDimensionId(), getShiftedCPMetadata(world, pos));
+				return new ColourfulPortalLocation(pos, world.provider.getDimension(), getShiftedCPMetadata(world, pos));
 			}
 			int size = colourfulPortals.size();
 			for (int i = 0; i < size; i++)
@@ -600,14 +522,14 @@ public class ColourfulPortalsMod
 				}
 				ColourfulPortalLocation current = (ColourfulPortalLocation)colourfulPortals.get(index);
 				if (current.portalMetadata == start.portalMetadata) {
-					if(MinecraftServer.getServer().worldServerForDimension(current.dimension) != null) {
+					if(FMLCommonHandler.instance().getMinecraftServerInstance().worldServerForDimension(current.dimension) != null) {
 						return current;
 					}
 				}
 			}
 			return start;
 		}
-		return new ColourfulPortalLocation(pos, world.provider.getDimensionId(), getShiftedCPMetadata(world, pos));
+		return new ColourfulPortalLocation(pos, world.provider.getDimension(), getShiftedCPMetadata(world, pos));
 	}
 
 	public static ColourfulPortalLocation findCPLocation(World world, BlockPos pos)
@@ -616,7 +538,7 @@ public class ColourfulPortalsMod
 			return null;
 		}
 		if (isStandaloneCPBlock(world.getBlockState(pos).getBlock())) {
-			return new ColourfulPortalLocation(pos, world.provider.getDimensionId(), getShiftedCPMetadata(world, pos));
+			return new ColourfulPortalLocation(pos, world.provider.getDimension(), getShiftedCPMetadata(world, pos));
 		}
 		boolean xDir = true;
 		boolean yDir = true;
@@ -665,7 +587,7 @@ public class ColourfulPortalsMod
 		CPLSet visited = new CPLSet();
 		Stack<ColourfulPortalLocation> toVisit = new Stack();
 
-		toVisit.push(new ColourfulPortalLocation(pos, world.provider.getDimensionId(), getShiftedCPMetadata(world, pos)));
+		toVisit.push(new ColourfulPortalLocation(pos, world.provider.getDimension(), getShiftedCPMetadata(world, pos)));
 
 		visited.add(toVisit.peek());
 		while (!toVisit.empty())
@@ -679,7 +601,7 @@ public class ColourfulPortalsMod
 			{
 				if (isCPBlock(world.getBlockState(currentPos.add(0, 1, 0)).getBlock()))
 				{
-					ColourfulPortalLocation temp = new ColourfulPortalLocation(currentPos.add(0, 1, 0), world.provider.getDimensionId(), getShiftedCPMetadata(world, currentPos.add(0, 1, 0)));
+					ColourfulPortalLocation temp = new ColourfulPortalLocation(currentPos.add(0, 1, 0), world.provider.getDimension(), getShiftedCPMetadata(world, currentPos.add(0, 1, 0)));
 					if (!visited.contains(temp))
 					{
 						toVisit.push(temp);
@@ -688,7 +610,7 @@ public class ColourfulPortalsMod
 				}
 				if (isCPBlock(world.getBlockState(currentPos.add(0, -1, 0)).getBlock()))
 				{
-					ColourfulPortalLocation temp = new ColourfulPortalLocation(currentPos.add(0, -1, 0), world.provider.getDimensionId(), getShiftedCPMetadata(world, currentPos.add(0, -1, 0)));
+					ColourfulPortalLocation temp = new ColourfulPortalLocation(currentPos.add(0, -1, 0), world.provider.getDimension(), getShiftedCPMetadata(world, currentPos.add(0, -1, 0)));
 					if (!visited.contains(temp))
 					{
 						toVisit.push(temp);
@@ -700,7 +622,7 @@ public class ColourfulPortalsMod
 			{
 				if (isCPBlock(world.getBlockState(currentPos.add(1, 0, 0)).getBlock()))
 				{
-					ColourfulPortalLocation temp = new ColourfulPortalLocation(currentPos.add(1, 0, 0), world.provider.getDimensionId(), getShiftedCPMetadata(world, currentPos.add(1, 0, 0)));
+					ColourfulPortalLocation temp = new ColourfulPortalLocation(currentPos.add(1, 0, 0), world.provider.getDimension(), getShiftedCPMetadata(world, currentPos.add(1, 0, 0)));
 					if (!visited.contains(temp))
 					{
 						toVisit.push(temp);
@@ -709,7 +631,7 @@ public class ColourfulPortalsMod
 				}
 				if (isCPBlock(world.getBlockState(currentPos.add(-1, 0, 0)).getBlock()))
 				{
-					ColourfulPortalLocation temp = new ColourfulPortalLocation(currentPos.add(-1, 0, 0), world.provider.getDimensionId(), getShiftedCPMetadata(world, currentPos.add(-1, 0, 0)));
+					ColourfulPortalLocation temp = new ColourfulPortalLocation(currentPos.add(-1, 0, 0), world.provider.getDimension(), getShiftedCPMetadata(world, currentPos.add(-1, 0, 0)));
 					if (!visited.contains(temp))
 					{
 						toVisit.push(temp);
@@ -721,7 +643,7 @@ public class ColourfulPortalsMod
 			{
 				if (isCPBlock(world.getBlockState(currentPos.add(0, 0, 1)).getBlock()))
 				{
-					ColourfulPortalLocation temp = new ColourfulPortalLocation(currentPos.add(0, 0, 1), world.provider.getDimensionId(), getShiftedCPMetadata(world, currentPos.add(0, 0, 1)));
+					ColourfulPortalLocation temp = new ColourfulPortalLocation(currentPos.add(0, 0, 1), world.provider.getDimension(), getShiftedCPMetadata(world, currentPos.add(0, 0, 1)));
 					if (!visited.contains(temp))
 					{
 						toVisit.push(temp);
@@ -730,7 +652,7 @@ public class ColourfulPortalsMod
 				}
 				if (isCPBlock(world.getBlockState(currentPos.add(0, 0, -1)).getBlock()))
 				{
-					ColourfulPortalLocation temp = new ColourfulPortalLocation(currentPos.add(0, 0, -1), world.provider.getDimensionId(), getShiftedCPMetadata(world, currentPos.add(0, 0, -1)));
+					ColourfulPortalLocation temp = new ColourfulPortalLocation(currentPos.add(0, 0, -1), world.provider.getDimension(), getShiftedCPMetadata(world, currentPos.add(0, 0, -1)));
 					if (!visited.contains(temp))
 					{
 						toVisit.push(temp);

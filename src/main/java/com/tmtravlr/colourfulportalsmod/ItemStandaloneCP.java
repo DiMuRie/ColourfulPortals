@@ -1,11 +1,13 @@
 package com.tmtravlr.colourfulportalsmod;
 
 import java.util.List;
+
+import com.mojang.realmsclient.gui.ChatFormatting;
+
 import net.minecraft.block.Block;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumChatFormatting;
 
 public class ItemStandaloneCP
 extends ItemBlock
@@ -38,6 +40,6 @@ extends ItemBlock
 			//Do nothing if an exception is thrown
 		}
 		
-		list.add(EnumChatFormatting.ITALIC + frameDisplayName);
+		list.add(ChatFormatting.ITALIC + frameDisplayName);
 	}
 }
