@@ -25,7 +25,10 @@ public class CommonProxy
   public TextureAtlasSprite registerTexture(ResourceLocation location) {
 	  return null;
   }
-  
+  public void registerOreThings(){
+		ColourfulRecipes.initOreRecipes();
+		ColourfulDictionary.oreRegistration();
+  }
   public void registerEventHandlers()
   {
     System.out.println("cp - Registering Event Handlers.");

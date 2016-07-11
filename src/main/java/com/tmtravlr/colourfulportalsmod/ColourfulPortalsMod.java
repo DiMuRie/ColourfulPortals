@@ -36,6 +36,7 @@ import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.fluids.FluidContainerRegistry;
+import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.FMLLog;
 import net.minecraftforge.fml.common.Mod;
@@ -65,7 +66,7 @@ public class ColourfulPortalsMod
 	public static HashMap<Integer, BlockColourfulPortal> cpBlocks = new HashMap();
 	public static HashMap<Integer, BlockStandaloneCP> scpBlocks = new HashMap();
 	public static HashMap<Integer, Block> frameBlocks = new HashMap();
-	private static HashMap<Integer, String> frameNames = new HashMap();
+	public static HashMap<Integer, String> frameNames = new HashMap();
 	private static final boolean debug = false;
 	public static int colourfulPortalRenderId;
 	public static int maxPortalGenerationDistance = 3000;
@@ -91,8 +92,8 @@ public class ColourfulPortalsMod
 	private static String colourfulEnderPearlId = "colourful_ender_pearl";
 	private static String colourfulEnderPearlReflectiveId = "colourful_ender_pearl_reflective";
 	private static String colourfulWaterId = "colourful_water";
-	private static String colourfulPortalIdPrefix = "cp_";
-	private static String standaloneCPIdPrefix = "scp_";
+	public static String colourfulPortalIdPrefix = "cp_";
+	public static String standaloneCPIdPrefix = "scp_";
 	public static CreativeTabs cpTab = new CreativeTabs("colourfulPortals")
 	{
 		public Item getTabIconItem()
@@ -110,12 +111,14 @@ public class ColourfulPortalsMod
 		this.loaded = false;
 		this.currentFolder = "";
 	}
+	IBlockState state;
 
 	//public static RenderStandaloneCP standaloneRenderer = new RenderStandaloneCP();
 
 	@Mod.EventHandler
 	public void preInit(FMLPreInitializationEvent event)
 	{
+		FluidRegistry.enableUniversalBucket();
 		colourfulPortalsMod = this;
 		//boolean addColourfulWaterToDungeonChests = true;
 
@@ -183,12 +186,40 @@ public class ColourfulPortalsMod
 
 		//GameRegistry.registerBlock(colourfulWater, colourfulWaterId);
 		FluidContainerRegistry.registerFluidContainer(colourfulFluid, new ItemStack(bucketColourfulWater), new ItemStack(bucketColourfulWaterEmpty));
+		FluidRegistry.addBucketForFluid(colourfulFluid);
+		for (int i = 0; i < frameBlockNames.length; i++)
+		{
+			Block frameBlock = Block.getBlockFromName(frameBlockNames[i]);
+			
+			if(frameBlock == null || frameBlock == Blocks.AIR) {
+				FMLLog.warning("[Colourful Portals] Error! Couldn't find a block with name '" + frameBlockNames[i] + "'!");
+				continue;
+			}
+			cpBlocks.put(i, (BlockColourfulPortal)new BlockColourfulPortal("portal_colour", Material.PORTAL).setHardness(-1.0F).setLightLevel(0.75F)/*.setUnlocalizedName("colourfulPortal")*/);
+			scpBlocks.put(i, (BlockStandaloneCP)new BlockStandaloneCP("portal_colour", frameBlock.getMaterial(state)).setHardness(0.8F).setLightLevel(0.75F)/*.setUnlocalizedName("standaloneColourfulPortal")*/);
+			frameBlocks.put(i, frameBlock);
+			
+			int colonIndex = frameBlockNames[i].indexOf(":");
+			if (colonIndex != -1) {
+				frameNames.put(i, frameBlockNames[i].substring(0, colonIndex) + "_" + frameBlockNames[i].substring(colonIndex + 1));
+			}
+			else {
+				frameNames.put(i, frameBlockNames[i]);
+			}
+		}
+		
+		/*for (int i = 0; i < cpBlocks.size(); i++)
+		{
+			GameRegistry.register((Block)scpBlocks.get(i));
+			GameRegistry.register((Block)cpBlocks.get(i));
+		}*/
 	}
 
 	@Mod.EventHandler
-	public void load(FMLInitializationEvent event, IBlockState IBlockState)
+	public void load(FMLInitializationEvent event)
 	{
-		for (int i = 0; i < frameBlockNames.length; i++)
+		
+		/*for (int i = 0; i < frameBlockNames.length; i++)
 		{
 			Block frameBlock = Block.getBlockFromName(frameBlockNames[i]);
 			
@@ -211,8 +242,7 @@ public class ColourfulPortalsMod
 		
 		for (int i = 0; i < cpBlocks.size(); i++)
 		{
-			GameRegistry.registerBlock((Block)cpBlocks.get(i), colourfulPortalIdPrefix + frameNames.get(i));
-			GameRegistry.registerBlock((Block)scpBlocks.get(i), ItemStandaloneCP.class, standaloneCPIdPrefix + frameNames.get(i));
+			GameRegistry.register((Block)scpBlocks.get(i));
 			GameRegistry.register((Block)cpBlocks.get(i));
 		}
 
@@ -225,21 +255,20 @@ public class ColourfulPortalsMod
 
 				GameRegistry.addRecipe(sCPStack, new Object[] { "WWW", "WBW", "WWW", Character.valueOf('W'), frame, Character.valueOf('B'), bucketColourfulWater });
 			}
-		}
-		GameRegistry.addRecipe(new ShapelessOreRecipe(new ItemStack(bucketColourfulWaterPartMixed, 1), new Object[] { Items.WATER_BUCKET, bucketColourfulWaterEmpty, "dyeBlack", "dyeRed", "dyeGreen", "dyeBrown", "dyeBlue", "dyeYellow", "dyeWhite" }));
-		GameRegistry.addRecipe(new ShapelessOreRecipe(new ItemStack(bucketColourfulWaterUnmixed, 1), new Object[] { Items.WATER_BUCKET, bucketColourfulWaterFirst, "dyeBlack", "dyeRed", "dyeGreen", "dyeBrown", "dyeBlue", "dyeYellow", "dyeWhite" }));
-		GameRegistry.addRecipe(new ShapelessOreRecipe(new ItemStack(enderPearlColoured, 1), new Object[] { Items.ENDER_PEARL, "dyeBlack", "dyeRed", "dyeGreen", "dyeBrown", "dyeBlue", "dyeYellow", "dyeWhite" }));
-		GameRegistry.addRecipe(new ItemStack(bucketColourfulWaterFirst, 1), new Object[] { "G", "B", Character.valueOf('G'), Items.GOLD_INGOT, Character.valueOf('B'), Items.BUCKET });
-		GameRegistry.addRecipe(new ItemStack(bucketColourfulWaterFirst, 1), new Object[] { "IGI", " I ", Character.valueOf('G'), Items.GOLD_INGOT, Character.valueOf('I'), Items.IRON_INGOT });
-		GameRegistry.addRecipe(new ItemStack(enderPearlColouredReflective, 1), new Object[] { " Q ", "QPQ", " Q ", Character.valueOf('Q'), Items.QUARTZ, Character.valueOf('P'), enderPearlColoured });
-		GameRegistry.addShapelessRecipe(new ItemStack(bucketColourfulWaterFirst), new Object[] { new ItemStack(bucketColourfulWaterEmpty) });
-		GameRegistry.addShapelessRecipe(new ItemStack(Items.BUCKET), new Object[] { new ItemStack(bucketColourfulWaterFirst) });
-		
-		if(xpBottleCrafting) {
+		}*/
+		//GameRegistry.addRecipe(new ShapelessOreRecipe(new ItemStack(bucketColourfulWaterPartMixed, 1), new Object[] { Items.WATER_BUCKET, bucketColourfulWaterEmpty, "dyeBlack", "dyeRed", "dyeGreen", "dyeBrown", "dyeBlue", "dyeYellow", "dyeWhite" }));
+		//GameRegistry.addRecipe(new ShapelessOreRecipe(new ItemStack(bucketColourfulWaterUnmixed, 1), new Object[] { Items.WATER_BUCKET, bucketColourfulWaterFirst, "dyeBlack", "dyeRed", "dyeGreen", "dyeBrown", "dyeBlue", "dyeYellow", "dyeWhite" }));
+		//GameRegistry.addRecipe(new ShapelessOreRecipe(new ItemStack(enderPearlColoured, 1), new Object[] { Items.ENDER_PEARL, "dyeBlack", "dyeRed", "dyeGreen", "dyeBrown", "dyeBlue", "dyeYellow", "dyeWhite" }));
+		//GameRegistry.addRecipe(new ItemStack(bucketColourfulWaterFirst, 1), new Object[] { "G", "B", Character.valueOf('G'), Items.GOLD_INGOT, Character.valueOf('B'), Items.BUCKET });
+		//GameRegistry.addRecipe(new ItemStack(bucketColourfulWaterFirst, 1), new Object[] { "IGI", " I ", Character.valueOf('G'), Items.GOLD_INGOT, Character.valueOf('I'), Items.IRON_INGOT });
+		//GameRegistry.addRecipe(new ItemStack(enderPearlColouredReflective, 1), new Object[] { " Q ", "QPQ", " Q ", Character.valueOf('Q'), Items.QUARTZ, Character.valueOf('P'), enderPearlColoured });
+		//GameRegistry.addShapelessRecipe(new ItemStack(bucketColourfulWaterFirst), new Object[] { new ItemStack(bucketColourfulWaterEmpty) });
+		//GameRegistry.addShapelessRecipe(new ItemStack(Items.BUCKET), new Object[] { new ItemStack(bucketColourfulWaterFirst) });
+		/*if(xpBottleCrafting) {
 			GameRegistry.addShapelessRecipe(new ItemStack(bucketColourfulWater), new Object[] {new ItemStack(bucketColourfulWaterUnmixed), new ItemStack(Items.EXPERIENCE_BOTTLE),new ItemStack(Items.EXPERIENCE_BOTTLE),new ItemStack(Items.EXPERIENCE_BOTTLE),new ItemStack(Items.EXPERIENCE_BOTTLE),new ItemStack(Items.EXPERIENCE_BOTTLE),new ItemStack(Items.EXPERIENCE_BOTTLE),new ItemStack(Items.EXPERIENCE_BOTTLE),new ItemStack(Items.EXPERIENCE_BOTTLE)});
 			GameRegistry.addShapelessRecipe(new ItemStack(bucketColourfulWater), new Object[] {new ItemStack(bucketColourfulWaterPartMixed), new ItemStack(Items.EXPERIENCE_BOTTLE),new ItemStack(Items.EXPERIENCE_BOTTLE),new ItemStack(Items.EXPERIENCE_BOTTLE),new ItemStack(Items.EXPERIENCE_BOTTLE)});
-		}
-
+		}*/
+		//proxy.registerOreThings();
 		proxy.registerSounds();
 		proxy.registerRenderers();
 		proxy.registerEventHandlers();
