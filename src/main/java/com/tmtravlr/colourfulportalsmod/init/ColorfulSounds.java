@@ -1,4 +1,4 @@
-package com.tmtravlr.colourfulportalsmod;
+package com.tmtravlr.colourfulportalsmod.init;
 
 import net.minecraft.init.Bootstrap;
 import net.minecraft.util.ResourceLocation;

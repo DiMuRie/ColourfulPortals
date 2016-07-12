@@ -3,6 +3,8 @@ package com.tmtravlr.colourfulportalsmod;
 import java.util.List;
 
 import com.mojang.realmsclient.gui.ChatFormatting;
+import com.tmtravlr.colourfulportalsmod.init.ColourfulBlocks;
+import com.tmtravlr.colourfulportalsmod.init.ColourfulItems;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
@@ -25,6 +27,7 @@ public class ItemBucketColourfulWater
   private boolean isMixed;
   private boolean isFull;
   private static final boolean debug = false;
+  public static ColourfulBlocks ColourfulBlocks;
   
   public ItemBucketColourfulWater(boolean setIsEnchanted, boolean setIsMixed, boolean setIsFull)
   {
@@ -94,18 +97,18 @@ public class ItemBucketColourfulWater
           IBlockState state = world.getBlockState(pos);
           Block block = state.getBlock();
           int l = block.getMetaFromState(state);
-          if (block == ColourfulPortalsMod.colourfulWater)
+          if (block == ColourfulBlocks.colourfulWater)
           {
             world.setBlockToAir(pos);
             if (player.capabilities.isCreativeMode) {
               return itemStack;
             }
             if (--itemStack.stackSize <= 0) {
-              return new ItemStack(ColourfulPortalsMod.bucketColourfulWater);
+              return new ItemStack(ColourfulItems.bucketColourfulWater);
             }
-            if (!player.inventory.addItemStackToInventory(new ItemStack(ColourfulPortalsMod.bucketColourfulWater))) {
+            if (!player.inventory.addItemStackToInventory(new ItemStack(ColourfulItems.bucketColourfulWater))) {
               //player.dropPlayerItemWithRandomChoice(new ItemStack(ColourfulPortalsMod.bucketColourfulWater, 1, 0), false);
-              player.dropItem(new ItemStack(ColourfulPortalsMod.bucketColourfulWater, 1, 0), false);
+              player.dropItem(new ItemStack(ColourfulItems.bucketColourfulWater, 1, 0), false);
             }
             return itemStack;
           }
@@ -113,7 +116,7 @@ public class ItemBucketColourfulWater
         else
         {
           if (!this.isFull) {
-            return new ItemStack(ColourfulPortalsMod.bucketColourfulWaterEmpty);
+            return new ItemStack(ColourfulItems.bucketColourfulWaterEmpty);
           }
           
           pos = pos.offset(movingobjectposition.sideHit);
@@ -122,7 +125,7 @@ public class ItemBucketColourfulWater
             return itemStack;
           }
           if ((tryPlaceContainedColourfulLiquid(world, pos)) && (!player.capabilities.isCreativeMode)) {
-            return new ItemStack(ColourfulPortalsMod.bucketColourfulWaterEmpty);
+            return new ItemStack(ColourfulItems.bucketColourfulWaterEmpty);
           }
         }
       }
@@ -138,7 +141,7 @@ public class ItemBucketColourfulWater
       {
         player.addExperienceLevel(-xpRequirement);
         
-        ItemStack toReturn = new ItemStack(this.isMixed ? ColourfulPortalsMod.bucketColourfulWaterEmpty : ColourfulPortalsMod.bucketColourfulWater);
+        ItemStack toReturn = new ItemStack(this.isMixed ? ColourfulItems.bucketColourfulWaterEmpty : ColourfulItems.bucketColourfulWater);
         if (--itemStack.stackSize <= 0) {
           return toReturn;
         }
@@ -189,7 +192,7 @@ public class ItemBucketColourfulWater
               world.destroyBlock(pos, true);
           }
 
-          world.setBlockState(pos, ColourfulPortalsMod.colourfulWater.getDefaultState(), 3);
+          world.setBlockState(pos, ColourfulBlocks.colourfulWater.getDefaultState(), 3);
       }
     }
     return true;

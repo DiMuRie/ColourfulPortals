@@ -2,6 +2,8 @@ package com.tmtravlr.colourfulportalsmod;
 
 import java.util.Random;
 
+import com.tmtravlr.colourfulportalsmod.init.ColourfulBlocks;
+
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.item.ItemBlock;
@@ -35,14 +37,14 @@ public class BlockColourfulWater extends BlockFluidClassic
 			super.updateTick(world, pos, state, rand);
 		}
 	}
-	
+	public static ColourfulBlocks ColourfulBlocks;
 	@Override
 	protected void flowIntoBlock(World world, BlockPos pos, int meta)
     {
         if (meta < 0) return;
         if (displaceIfPossible(world, pos))
         {
-        	world.setBlockState(pos, ColourfulPortalsMod.colourfulWater.getDefaultState().withProperty(LEVEL, meta));
+        	world.setBlockState(pos, ColourfulBlocks.colourfulWater.getDefaultState().withProperty(LEVEL, meta));
         }
     }
 

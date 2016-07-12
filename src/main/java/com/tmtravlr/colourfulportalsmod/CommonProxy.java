@@ -8,6 +8,11 @@ import java.nio.file.StandardCopyOption;
 
 import com.tmtravlr.colourfulportalsmod.LT.LTBucketEmpty;
 import com.tmtravlr.colourfulportalsmod.LT.LTBucketfull;
+import com.tmtravlr.colourfulportalsmod.init.ColourfulBlocks;
+import com.tmtravlr.colourfulportalsmod.init.ColourfulConfig;
+import com.tmtravlr.colourfulportalsmod.init.ColourfulDictionary;
+import com.tmtravlr.colourfulportalsmod.init.ColourfulItems;
+import com.tmtravlr.colourfulportalsmod.init.ColourfulRecipes;
 
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.util.ResourceLocation;

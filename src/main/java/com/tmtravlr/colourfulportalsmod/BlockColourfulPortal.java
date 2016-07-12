@@ -10,6 +10,10 @@ import java.util.Stack;
 
 import javax.annotation.Nullable;
 
+import com.tmtravlr.colourfulportalsmod.init.ColorfulSounds;
+import com.tmtravlr.colourfulportalsmod.init.ColourfulBlocks;
+import com.tmtravlr.colourfulportalsmod.init.ColourfulItems;
+
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockBreakable;
 import net.minecraft.block.material.Material;
@@ -55,7 +59,7 @@ extends BlockBreakable
 	private static final int PLAYER_MIN_DELAY = 0;
 	private static final int PLAYER_MAX_DELAY = 10;
 	private static LinkedList<Entity> entitiesTeleported = new LinkedList();
-	public static BlockColourfulPortal instance = new BlockColourfulPortal("", Material.PORTAL);
+	public static BlockColourfulPortal instance = new BlockColourfulPortal("colourful_portal", Material.PORTAL);
 	private static int goCrazyX = -1;
 	private static int goCrazyY = -1;
 	private static int goCrazyZ = -1;
@@ -204,7 +208,7 @@ extends BlockBreakable
 	{
 		return 1;
 	}
-
+public static ColourfulItems ColourfulItems;
 	@SideOnly(Side.CLIENT)
 	public void randomDisplayTick(World world, BlockPos pos, IBlockState state, Random rand)
 	{
@@ -260,13 +264,13 @@ extends BlockBreakable
 			if ((entity instanceof EntityItem))
 			{
 				ItemStack item = ((EntityItem)entity).getEntityItem();
-				if (Item.getIdFromItem(item.getItem()) == Item.getIdFromItem(ColourfulPortalsMod.enderPearlColoured))
+				if (Item.getIdFromItem(item.getItem()) == Item.getIdFromItem(ColourfulItems.enderPearlColoured))
 				{
 					tryToCreateDestination(world, pos, world.getBlockState(pos), true);
 
 					entity.setDead();
 				}
-				else if (Item.getIdFromItem(item.getItem()) == Item.getIdFromItem(ColourfulPortalsMod.enderPearlColouredReflective))
+				else if (Item.getIdFromItem(item.getItem()) == Item.getIdFromItem(ColourfulItems.enderPearlColouredReflective))
 				{
 					tryToCreateDestination(world, pos, world.getBlockState(pos), false);
 
@@ -333,7 +337,7 @@ extends BlockBreakable
 		}
 		
 	}
-
+public static ColourfulBlocks ColourfulBlocks;
 	public static boolean tryToCreatePortal(World par1World, BlockPos pos)
 	{
 		return tryToCreatePortal(par1World, pos, true);
@@ -348,7 +352,7 @@ extends BlockBreakable
 		if (!world.isRemote)
 		{
 			int maxSize = ColourfulPortalsMod.maxPortalSizeCheck * ColourfulPortalsMod.maxPortalSizeCheck - 1;
-			if (!world.isAirBlock(pos.up()) && world.getBlockState(pos.up()).getBlock() != ColourfulPortalsMod.colourfulWater) {
+			if (!world.isAirBlock(pos.up()) && world.getBlockState(pos.up()).getBlock() != ColourfulBlocks.colourfulWater) {
 				return false;
 			}
 			if (!ColourfulPortalsMod.isFrameBlock(world.getBlockState(pos.down()).getBlock())) {
@@ -361,37 +365,37 @@ extends BlockBreakable
 			boolean[] dirs = { true, true, true };
 			int i = 0;
 			int thisId = 0;
-			for (i = 0; (i < maxSize + 1) && ((world.isAirBlock(pos.south(i))) || (world.getBlockState(pos.south(i)).getBlock() == ColourfulPortalsMod.colourfulWater)); i++) {}
+			for (i = 0; (i < maxSize + 1) && ((world.isAirBlock(pos.south(i))) || (world.getBlockState(pos.south(i)).getBlock() == ColourfulBlocks.colourfulWater)); i++) {}
 			if ((world.getBlockState(pos.south(i)).getBlock() != frameBlock) || (ColourfulPortalsMod.getMeta(world, pos.south(i)) != frameMeta))
 			{
 				dirs[2] = false;
 				dirs[1] = false;
 			}
-			for (i = 0; (i < maxSize + 1) && ((world.isAirBlock(pos.north(i))) || (world.getBlockState(pos.north(i)).getBlock() == ColourfulPortalsMod.colourfulWater)); i++) {}
+			for (i = 0; (i < maxSize + 1) && ((world.isAirBlock(pos.north(i))) || (world.getBlockState(pos.north(i)).getBlock() == ColourfulBlocks.colourfulWater)); i++) {}
 			if ((world.getBlockState(pos.north(i)).getBlock() != frameBlock) || (ColourfulPortalsMod.getMeta(world, pos.north(i)) != frameMeta))
 			{
 				dirs[2] = false;
 				dirs[1] = false;
 			}
-			for (i = 0; (i < maxSize + 1) && ((world.isAirBlock(pos.up(i))) || (world.getBlockState(pos.up(i)).getBlock() == ColourfulPortalsMod.colourfulWater)); i++) {}
+			for (i = 0; (i < maxSize + 1) && ((world.isAirBlock(pos.up(i))) || (world.getBlockState(pos.up(i)).getBlock() == ColourfulBlocks.colourfulWater)); i++) {}
 			if ((world.getBlockState(pos.up(i)).getBlock() != frameBlock) || (ColourfulPortalsMod.getMeta(world, pos.up(i)) != frameMeta))
 			{
 				dirs[2] = false;
 				dirs[0] = false;
 			}
-			for (i = 0; (i < maxSize + 1) && ((world.isAirBlock(pos.down(i))) || (world.getBlockState(pos.down(i)).getBlock() == ColourfulPortalsMod.colourfulWater)); i++) {}
+			for (i = 0; (i < maxSize + 1) && ((world.isAirBlock(pos.down(i))) || (world.getBlockState(pos.down(i)).getBlock() == ColourfulBlocks.colourfulWater)); i++) {}
 			if ((world.getBlockState(pos.down(i)).getBlock() != frameBlock) || (ColourfulPortalsMod.getMeta(world, pos.down(i)) != frameMeta))
 			{
 				dirs[2] = false;
 				dirs[0] = false;
 			}
-			for (i = 0; (i < maxSize + 1) && ((world.isAirBlock(pos.east(i))) || (world.getBlockState(pos.east(i)).getBlock() == ColourfulPortalsMod.colourfulWater)); i++) {}
+			for (i = 0; (i < maxSize + 1) && ((world.isAirBlock(pos.east(i))) || (world.getBlockState(pos.east(i)).getBlock() == ColourfulBlocks.colourfulWater)); i++) {}
 			if ((world.getBlockState(pos.east(i)).getBlock() != frameBlock) || (ColourfulPortalsMod.getMeta(world, pos.east(i)) != frameMeta))
 			{
 				dirs[0] = false;
 				dirs[1] = false;
 			}
-			for (i = 0; (i < maxSize + 1) && ((world.isAirBlock(pos.west(i))) || (world.getBlockState(pos.west(i)).getBlock() == ColourfulPortalsMod.colourfulWater)); i++) {}
+			for (i = 0; (i < maxSize + 1) && ((world.isAirBlock(pos.west(i))) || (world.getBlockState(pos.west(i)).getBlock() == ColourfulBlocks.colourfulWater)); i++) {}
 			if ((world.getBlockState(pos.west(i)).getBlock() != frameBlock) || (ColourfulPortalsMod.getMeta(world, pos.west(i)) != frameMeta))
 			{
 				dirs[0] = false;
@@ -426,7 +430,7 @@ extends BlockBreakable
 						{
 							Block nextBlock = world.getBlockState(currentPos.up()).getBlock();
 							int nextMeta = nextBlock.getMetaFromState(world.getBlockState(currentPos.up()));
-							if (((nextBlock != frameBlock) && (nextMeta != frameMeta) && (nextBlock != Blocks.AIR) && (nextBlock != ColourfulPortalsMod.colourfulWater)) || (Math.abs(current.xPos - x) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.yPos + 1 - y) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.zPos - z) > ColourfulPortalsMod.maxPortalSizeCheck)) {
+							if (((nextBlock != frameBlock) && (nextMeta != frameMeta) && (nextBlock != Blocks.AIR) && (nextBlock != ColourfulBlocks.colourfulWater)) || (Math.abs(current.xPos - x) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.yPos + 1 - y) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.zPos - z) > ColourfulPortalsMod.maxPortalSizeCheck)) {
 								if (xLook) {
 									dirs[0] = false;
 								} else if (zLook) {
@@ -435,7 +439,7 @@ extends BlockBreakable
 							}
 							nextBlock = world.getBlockState(currentPos.down()).getBlock();
 							nextMeta = nextBlock.getMetaFromState(world.getBlockState(currentPos.down()));
-							if (((nextBlock != frameBlock) && (nextMeta != frameMeta) && (nextBlock != Blocks.AIR) && (nextBlock != ColourfulPortalsMod.colourfulWater)) || (Math.abs(current.xPos - x) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.yPos - 1 - y) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.zPos - z) > ColourfulPortalsMod.maxPortalSizeCheck)) {
+							if (((nextBlock != frameBlock) && (nextMeta != frameMeta) && (nextBlock != Blocks.AIR) && (nextBlock != ColourfulBlocks.colourfulWater)) || (Math.abs(current.xPos - x) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.yPos - 1 - y) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.zPos - z) > ColourfulPortalsMod.maxPortalSizeCheck)) {
 								if (xLook) {
 									dirs[0] = false;
 								} else if (zLook) {
@@ -447,7 +451,7 @@ extends BlockBreakable
 						{
 							Block nextBlock = world.getBlockState(currentPos.east()).getBlock();
 							int nextMeta = nextBlock.getMetaFromState(world.getBlockState(currentPos.east()));
-							if (((nextBlock != frameBlock) && (nextMeta != frameMeta) && (nextBlock != Blocks.AIR) && (nextBlock != ColourfulPortalsMod.colourfulWater)) || (Math.abs(current.xPos - x) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.yPos - y) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.zPos + 1 - z) > ColourfulPortalsMod.maxPortalSizeCheck)) {
+							if (((nextBlock != frameBlock) && (nextMeta != frameMeta) && (nextBlock != Blocks.AIR) && (nextBlock != ColourfulBlocks.colourfulWater)) || (Math.abs(current.xPos - x) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.yPos - y) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.zPos + 1 - z) > ColourfulPortalsMod.maxPortalSizeCheck)) {
 								if (xLook) {
 									dirs[0] = false;
 								} else if (yLook) {
@@ -456,7 +460,7 @@ extends BlockBreakable
 							}
 							nextBlock = world.getBlockState(currentPos.west()).getBlock();
 							nextMeta = nextBlock.getMetaFromState(world.getBlockState(currentPos.west()));
-							if (((nextBlock != frameBlock) && (nextMeta != frameMeta) && (nextBlock != Blocks.AIR) && (nextBlock != ColourfulPortalsMod.colourfulWater)) || (Math.abs(current.xPos - x) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.yPos - y) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.zPos - 1 - z) > ColourfulPortalsMod.maxPortalSizeCheck)) {
+							if (((nextBlock != frameBlock) && (nextMeta != frameMeta) && (nextBlock != Blocks.AIR) && (nextBlock != ColourfulBlocks.colourfulWater)) || (Math.abs(current.xPos - x) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.yPos - y) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.zPos - 1 - z) > ColourfulPortalsMod.maxPortalSizeCheck)) {
 								if (xLook) {
 									dirs[0] = false;
 								} else if (yLook) {
@@ -468,7 +472,7 @@ extends BlockBreakable
 						{
 							Block nextBlock = world.getBlockState(currentPos.south()).getBlock();
 							int nextMeta = nextBlock.getMetaFromState(world.getBlockState(currentPos.south()));
-							if (((nextBlock != frameBlock) && (nextMeta != frameMeta) && (nextBlock != Blocks.AIR) && (nextBlock != ColourfulPortalsMod.colourfulWater)) || (Math.abs(current.xPos + 1 - x) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.yPos - y) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.zPos - z) > ColourfulPortalsMod.maxPortalSizeCheck)) {
+							if (((nextBlock != frameBlock) && (nextMeta != frameMeta) && (nextBlock != Blocks.AIR) && (nextBlock != ColourfulBlocks.colourfulWater)) || (Math.abs(current.xPos + 1 - x) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.yPos - y) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.zPos - z) > ColourfulPortalsMod.maxPortalSizeCheck)) {
 								if (yLook) {
 									dirs[1] = false;
 								} else if (zLook) {
@@ -477,7 +481,7 @@ extends BlockBreakable
 							}
 							nextBlock = world.getBlockState(currentPos.north()).getBlock();
 							nextMeta = nextBlock.getMetaFromState(world.getBlockState(currentPos.north()));
-							if (((nextBlock != frameBlock) && (nextMeta != frameMeta) && (nextBlock != Blocks.AIR) && (nextBlock != ColourfulPortalsMod.colourfulWater)) || (Math.abs(current.xPos - 1 - x) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.yPos - y) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.zPos - z) > ColourfulPortalsMod.maxPortalSizeCheck)) {
+							if (((nextBlock != frameBlock) && (nextMeta != frameMeta) && (nextBlock != Blocks.AIR) && (nextBlock != ColourfulBlocks.colourfulWater)) || (Math.abs(current.xPos - 1 - x) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.yPos - y) > ColourfulPortalsMod.maxPortalSizeCheck) || (Math.abs(current.zPos - z) > ColourfulPortalsMod.maxPortalSizeCheck)) {
 								if (yLook) {
 									dirs[1] = false;
 								} else if (zLook) {
@@ -489,7 +493,7 @@ extends BlockBreakable
 						{
 							if ((zLook) || (xLook))
 							{
-								if (world.isAirBlock(currentPos.up()) || world.getBlockState(currentPos.up()).getBlock() == ColourfulPortalsMod.colourfulWater)
+								if (world.isAirBlock(currentPos.up()) || world.getBlockState(currentPos.up()).getBlock() == ColourfulBlocks.colourfulWater)
 								{
 									ColourfulPortalsMod.ColourfulPortalLocation temp = new ColourfulPortalsMod.ColourfulPortalLocation(currentPos.up(), world.provider.getDimension(), ColourfulPortalsMod.getShiftedCPMetadataByFrameBlock(frameState));
 									if (!visited.contains(temp))
@@ -498,7 +502,7 @@ extends BlockBreakable
 										visited.add(temp);
 									}
 								}
-								if (world.isAirBlock(currentPos.down()) || world.getBlockState(currentPos.down()).getBlock() == ColourfulPortalsMod.colourfulWater)
+								if (world.isAirBlock(currentPos.down()) || world.getBlockState(currentPos.down()).getBlock() == ColourfulBlocks.colourfulWater)
 								{
 									ColourfulPortalsMod.ColourfulPortalLocation temp = new ColourfulPortalsMod.ColourfulPortalLocation(currentPos.down(), world.provider.getDimension(), ColourfulPortalsMod.getShiftedCPMetadataByFrameBlock(frameState));
 									if (!visited.contains(temp))
@@ -510,7 +514,7 @@ extends BlockBreakable
 							}
 							if ((zLook) || (yLook))
 							{
-								if (world.isAirBlock(currentPos.south()) || world.getBlockState(currentPos.south()).getBlock() == ColourfulPortalsMod.colourfulWater)
+								if (world.isAirBlock(currentPos.south()) || world.getBlockState(currentPos.south()).getBlock() == ColourfulBlocks.colourfulWater)
 								{
 									ColourfulPortalsMod.ColourfulPortalLocation temp = new ColourfulPortalsMod.ColourfulPortalLocation(currentPos.south(), world.provider.getDimension(), ColourfulPortalsMod.getShiftedCPMetadataByFrameBlock(frameState));
 									if (!visited.contains(temp))
@@ -519,7 +523,7 @@ extends BlockBreakable
 										visited.add(temp);
 									}
 								}
-								if (world.isAirBlock(currentPos.north()) || world.getBlockState(currentPos.north()).getBlock() == ColourfulPortalsMod.colourfulWater)
+								if (world.isAirBlock(currentPos.north()) || world.getBlockState(currentPos.north()).getBlock() == ColourfulBlocks.colourfulWater)
 								{
 									ColourfulPortalsMod.ColourfulPortalLocation temp = new ColourfulPortalsMod.ColourfulPortalLocation(currentPos.north(), world.provider.getDimension(), ColourfulPortalsMod.getShiftedCPMetadataByFrameBlock(frameState));
 									if (!visited.contains(temp))
@@ -531,7 +535,7 @@ extends BlockBreakable
 							}
 							if ((yLook) || (xLook))
 							{
-								if (world.isAirBlock(currentPos.east()) || world.getBlockState(currentPos.east()).getBlock() == ColourfulPortalsMod.colourfulWater)
+								if (world.isAirBlock(currentPos.east()) || world.getBlockState(currentPos.east()).getBlock() == ColourfulBlocks.colourfulWater)
 								{
 									ColourfulPortalsMod.ColourfulPortalLocation temp = new ColourfulPortalsMod.ColourfulPortalLocation(currentPos.east(), world.provider.getDimension(), ColourfulPortalsMod.getShiftedCPMetadataByFrameBlock(frameState));
 									if (!visited.contains(temp))
@@ -540,7 +544,7 @@ extends BlockBreakable
 										visited.add(temp);
 									}
 								}
-								if (world.isAirBlock(currentPos.west()) || world.getBlockState(currentPos.west()).getBlock() == ColourfulPortalsMod.colourfulWater)
+								if (world.isAirBlock(currentPos.west()) || world.getBlockState(currentPos.west()).getBlock() == ColourfulBlocks.colourfulWater)
 								{
 									ColourfulPortalsMod.ColourfulPortalLocation temp = new ColourfulPortalsMod.ColourfulPortalLocation(currentPos.west(), world.provider.getDimension(), ColourfulPortalsMod.getShiftedCPMetadataByFrameBlock(frameState));
 									if (!visited.contains(temp))

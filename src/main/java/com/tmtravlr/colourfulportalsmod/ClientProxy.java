@@ -3,10 +3,12 @@ package com.tmtravlr.colourfulportalsmod;
 import java.io.File;
 import java.io.IOException;
 
+import com.tmtravlr.colourfulportalsmod.init.ColourfulBlocks;
+import com.tmtravlr.colourfulportalsmod.init.ColourfulItems;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 
@@ -14,22 +16,24 @@ public class ClientProxy
   extends CommonProxy
 {
   public static int renderPass;
+  public static ColourfulItems ColourfulItems;
+  public static ColourfulBlocks ColourfulBlocks;
   
   public void registerSounds() {}
   
   public void registerRenderers()
   {
 	  Minecraft mc = Minecraft.getMinecraft();
-	  mc.getBlockRendererDispatcher().getBlockModelShapes().registerBuiltInBlocks(ColourfulPortalsMod.colourfulWater);
+	  mc.getBlockRendererDispatcher().getBlockModelShapes().registerBuiltInBlocks(ColourfulBlocks.colourfulWater);
 	  
-	  mc.getRenderItem().getItemModelMesher().register(ColourfulPortalsMod.bucketColourfulWaterEmpty, 0, new ModelResourceLocation("colourfulportalsmod:bucket_colourful_water_first", "inventory"));
-	  mc.getRenderItem().getItemModelMesher().register(ColourfulPortalsMod.bucketColourfulWaterFirst, 0, new ModelResourceLocation("colourfulportalsmod:bucket_colourful_water_first", "inventory"));
-	  mc.getRenderItem().getItemModelMesher().register(ColourfulPortalsMod.bucketColourfulWater, 0, new ModelResourceLocation("colourfulportalsmod:bucket_colourful_water", "inventory"));
-	  mc.getRenderItem().getItemModelMesher().register(ColourfulPortalsMod.bucketColourfulWaterUnmixed, 0, new ModelResourceLocation("colourfulportalsmod:bucket_colourful_water_unmixed", "inventory"));
-	  mc.getRenderItem().getItemModelMesher().register(ColourfulPortalsMod.bucketColourfulWaterPartMixed, 0, new ModelResourceLocation("colourfulportalsmod:bucket_colourful_water_unmixed", "inventory"));
+	  mc.getRenderItem().getItemModelMesher().register(ColourfulItems.bucketColourfulWaterEmpty, 0, new ModelResourceLocation("colourfulportalsmod:bucket_colourful_water_first", "inventory"));
+	  mc.getRenderItem().getItemModelMesher().register(ColourfulItems.bucketColourfulWaterFirst, 0, new ModelResourceLocation("colourfulportalsmod:bucket_colourful_water_first", "inventory"));
+	  mc.getRenderItem().getItemModelMesher().register(ColourfulItems.bucketColourfulWater, 0, new ModelResourceLocation("colourfulportalsmod:bucket_colourful_water", "inventory"));
+	  mc.getRenderItem().getItemModelMesher().register(ColourfulItems.bucketColourfulWaterUnmixed, 0, new ModelResourceLocation("colourfulportalsmod:bucket_colourful_water_unmixed", "inventory"));
+	  mc.getRenderItem().getItemModelMesher().register(ColourfulItems.bucketColourfulWaterPartMixed, 0, new ModelResourceLocation("colourfulportalsmod:bucket_colourful_water_unmixed", "inventory"));
 	  
-	  mc.getRenderItem().getItemModelMesher().register(ColourfulPortalsMod.enderPearlColoured, 0, new ModelResourceLocation("colourfulportalsmod:colourful_ender_pearl", "inventory"));
-	  mc.getRenderItem().getItemModelMesher().register(ColourfulPortalsMod.enderPearlColouredReflective, 0, new ModelResourceLocation("colourfulportalsmod:colourful_ender_pearl_reflective", "inventory"));
+	  mc.getRenderItem().getItemModelMesher().register(ColourfulItems.enderPearlColoured, 0, new ModelResourceLocation("colourfulportalsmod:colourful_ender_pearl", "inventory"));
+	  mc.getRenderItem().getItemModelMesher().register(ColourfulItems.enderPearlColouredReflective, 0, new ModelResourceLocation("colourfulportalsmod:colourful_ender_pearl_reflective", "inventory"));
 	  
     //System.out.println("cp - Loading the rendering handler.");
     

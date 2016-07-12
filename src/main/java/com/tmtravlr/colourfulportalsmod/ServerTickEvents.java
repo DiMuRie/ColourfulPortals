@@ -14,7 +14,7 @@ public class ServerTickEvents
     if (event.phase == Phase.START)
     {
       ColourfulPortalsMod cpMod = ColourfulPortalsMod.colourfulPortalsMod;
-      if (FMLCommonHandler.instance().getMinecraftServerInstance().getFolderName() != cpMod.currentFolder)
+      if (FMLCommonHandler.instance().getMinecraftServerInstance().getServer().getFolderName() != cpMod.currentFolder)
       {
         cpMod.loadPortalsList();
         cpMod.currentFolder = FMLCommonHandler.instance().getMinecraftServerInstance().getFolderName();

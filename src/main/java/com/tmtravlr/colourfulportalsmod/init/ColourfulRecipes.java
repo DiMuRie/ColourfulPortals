@@ -1,4 +1,6 @@
-package com.tmtravlr.colourfulportalsmod;
+package com.tmtravlr.colourfulportalsmod.init;
+
+import com.tmtravlr.colourfulportalsmod.ColourfulPortalsMod;
 
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
@@ -21,36 +23,36 @@ public final class ColourfulRecipes {
 						frame,frame,frame);
 			}
 		}
-		addShapelessOreDictRecipe(new ItemStack(ColourfulPortalsMod.bucketColourfulWaterPartMixed, 1),
+		addShapelessOreDictRecipe(new ItemStack(ColourfulItems.bucketColourfulWaterPartMixed, 1),
 				"full_water_bucket", "empty_colourful__water_bucket", "dyeBlack", 
 				"dyeRed", "dyeGreen","dyeBrown", 
 				"dyeBlue", "dyeYellow", "dyeWhite");
-		addShapelessOreDictRecipe(new ItemStack(ColourfulPortalsMod.bucketColourfulWaterUnmixed, 1),
+		addShapelessOreDictRecipe(new ItemStack(ColourfulItems.bucketColourfulWaterUnmixed, 1),
 				"full_water_bucket", "first_stage_colourful_water_bucket", "dyeBlack", 
 				"dyeRed", "dyeGreen", "dyeBrown",
 				"dyeBlue", "dyeYellow", "dyeWhite" );
-		addShapelessOreDictRecipe(new ItemStack(ColourfulPortalsMod.enderPearlColoured, 1),
+		addShapelessOreDictRecipe(new ItemStack(ColourfulItems.enderPearlColoured, 1),
 				"enderpearl", "dyeBlack", "dyeRed", 
 				"dyeGreen", "dyeBrown", "dyeBlue", 
 				"dyeYellow", "dyeWhite");
-		addOreDictRecipe(new ItemStack(ColourfulPortalsMod.bucketColourfulWaterFirst, 1),
+		addOreDictRecipe(new ItemStack(ColourfulItems.bucketColourfulWaterFirst, 1),
 				"IGI", " I ", "   ",
 				'G', "ingotGold",
 				'I', "ingotIron");
-		addOreDictRecipe(new ItemStack(ColourfulPortalsMod.bucketColourfulWaterFirst, 1),
+		addOreDictRecipe(new ItemStack(ColourfulItems.bucketColourfulWaterFirst, 1),
 				"GB", "   ", "   ",
 				'G', "ingotGold",
 				'B', "empty_water_bucket");
-		addOreDictRecipe(new ItemStack(ColourfulPortalsMod.enderPearlColouredReflective, 1),
+		addOreDictRecipe(new ItemStack(ColourfulItems.enderPearlColouredReflective, 1),
 				" Q ", "QPQ", " Q ",
 				'Q', "gemQuartz",
 				'P', "coloured_ender_pearl");
-		addShapelessOreDictRecipe(new ItemStack(ColourfulPortalsMod.bucketColourfulWaterFirst),
+		addShapelessOreDictRecipe(new ItemStack(ColourfulItems.bucketColourfulWaterFirst),
 				'S', "empty_colourful__water_bucket");
 		addShapelessOreDictRecipe(new ItemStack(Items.BUCKET),
 				"first_stage_colourful_water_bucket");
 		if(ColourfulPortalsMod.xpBottleCrafting) {
-		addShapelessOreDictRecipe(new ItemStack(ColourfulPortalsMod.bucketColourfulWater),
+		addShapelessOreDictRecipe(new ItemStack(ColourfulItems.bucketColourfulWater),
 				"exp_bottle","exp_bottle","exp_bottle","exp_bottle","exp_bottle","exp_bottle","exp_bottle","exp_bottle");
 		}
 	}

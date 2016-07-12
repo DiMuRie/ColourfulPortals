@@ -12,29 +12,25 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Stack;
 import java.util.TreeSet;
 
+import com.tmtravlr.colourfulportalsmod.init.ColourfulBlocks;
+import com.tmtravlr.colourfulportalsmod.init.ColourfulConfig;
+import com.tmtravlr.colourfulportalsmod.init.ColourfulItems;
+
 import net.minecraft.block.Block;
-import net.minecraft.block.BlockDispenser;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.dispenser.BehaviorDefaultDispenseItem;
-import net.minecraft.dispenser.IBlockSource;
 import net.minecraft.init.Blocks;
-import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.tileentity.TileEntityDispenser;
-import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
-import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.fluids.FluidContainerRegistry;
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fml.common.FMLCommonHandler;
@@ -45,7 +41,6 @@ import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.registry.GameRegistry;
-import net.minecraftforge.oredict.ShapelessOreRecipe;
 
 @Mod(modid="colourfulportalsmod", name="Colourful Portals Mod", version="1.4.3")
 public class ColourfulPortalsMod
@@ -55,18 +50,14 @@ public class ColourfulPortalsMod
 	@SidedProxy(clientSide="com.tmtravlr.colourfulportalsmod.ClientProxy", serverSide="com.tmtravlr.colourfulportalsmod.CommonProxy")
 	public static CommonProxy proxy;
 	public static final ColourfulFluid colourfulFluid = new ColourfulFluid();
-	public static Item bucketColourfulWaterEmpty;
-	public static Item bucketColourfulWater;
-	public static Item bucketColourfulWaterUnmixed;
-	public static Item bucketColourfulWaterPartMixed;
-	public static Item bucketColourfulWaterFirst;
-	public static Item enderPearlColoured;
-	public static Item enderPearlColouredReflective;
-	public static Block colourfulWater;
-	public static HashMap<Integer, BlockColourfulPortal> cpBlocks = new HashMap();
-	public static HashMap<Integer, BlockStandaloneCP> scpBlocks = new HashMap();
+	public static BlockColourfulPortal BlockColourfulPortal;
+	//public static HashMap<Integer, BlockColourfulPortal> cpBlocks = new HashMap();
+	//public static HashMap<Integer, BlockStandaloneCP> scpBlocks = new HashMap();
+	public static List<BlockColourfulPortal> cpBlocks = new ArrayList();
+	public static List<BlockStandaloneCP> scpBlocks = new ArrayList();
 	public static HashMap<Integer, Block> frameBlocks = new HashMap();
-	public static HashMap<Integer, String> frameNames = new HashMap();
+	//public static List<String> frameNames = new ArrayList();
+	//public static List<String> frameNames = new ArrayList<String>();
 	private static final boolean debug = false;
 	public static int colourfulPortalRenderId;
 	public static int maxPortalGenerationDistance = 3000;
@@ -98,13 +89,16 @@ public class ColourfulPortalsMod
 	{
 		public Item getTabIconItem()
 		{
-			return ColourfulPortalsMod.bucketColourfulWater;
+			return ColourfulItems.bucketColourfulWater;
 		}
 	};
 	private static LinkedList<ColourfulPortalLocation> colourfulPortals = new LinkedList();
 	private File saveLocation;
 	private boolean loaded;
 	public String currentFolder;
+	public static ColourfulConfig ColourfulConfig;
+	public static ColourfulItems ColourfulItems;
+	public static ColourfulBlocks ColourfulBlocks;
 
 	public ColourfulPortalsMod()
 	{
@@ -112,7 +106,7 @@ public class ColourfulPortalsMod
 		this.currentFolder = "";
 	}
 	IBlockState state;
-	public static void Method(){
+	static{
 		FluidRegistry.enableUniversalBucket();
 	}
 
@@ -120,100 +114,45 @@ public class ColourfulPortalsMod
 	@Mod.EventHandler
 	public void preInit(FMLPreInitializationEvent event)
 	{
-		colourfulPortalsMod = this;
-		//boolean addColourfulWaterToDungeonChests = true;
-
-		Configuration config = new Configuration(event.getSuggestedConfigurationFile());
-
-		config.load();
-
-
-		maxPortalGenerationDistance = config.getInt("Random Portal Generation Max Distance", "other", 3000, 0, 30000000, "Maximum distance away from you a randomized portal will generate.");
-		maxPortalsPerType = config.getInt("Maximum Number of Portals per Type (Colour and Material)", "other", -1, -1, Integer.MAX_VALUE, "Maximum number of portals you can make per type. -1 means unlimited.");
-		maxPortalSizeCheck = config.getInt("Maximum Portal Size (Make Bigger for Larger Portals)", "other", 16, 1, Integer.MAX_VALUE, "Limit on the maximum size of portal to prevent lag from accidentally creating massive portals.\nThe portal will create up to this number of blocks away from where you place the colourful water.");
-		xpLevelMixingCost = config.getInt("Number of XP Levels Needed to Mix Colourful Water", "other", 5, 0, Integer.MAX_VALUE, "Levels of XP you need to mix the colourful water from a bucket of dyes.");
-		xpLevelRemixingCost = config.getInt("Number of XP Levels Needed to Re-Mix Colourful Water", "other", 2, 0, Integer.MAX_VALUE, "Levels of XP that you need to mix the partially enchanted bucket of dyes.");
-		xpBottleCrafting = config.getBoolean("Allow crafting of colourful water with XP bottles (for automation)", "other", false, "Adds a crafting recipe for the colourful water using XP bottles.");
-		//addColourfulWaterToDungeonChests = config.getBoolean("Add Buckets of Colourful Water to Dungeon Chests?", "other", true, "If set to true, full and empty buckets of colourful water will occasionally spawn in chests.");
-		if (xpLevelRemixingCost > xpLevelMixingCost) {
-			xpLevelRemixingCost = xpLevelMixingCost;
-		}
-		config.addCustomCategoryComment("random_destination_blacklist", "If set to true, random destination portals with random dimensions\nwill not generate in any of the dimensions in this list. They can\nstill be created with same-dimension random destinations or placed\nmanually. Defaults to true. Takes precedence over the whitelist.");
-
-		config.addCustomCategoryComment("random_destination_whitelist", "If set to true, random destination portals with random dimensions\nwill only generate in these dimensions. Ones with the same dimension\ncan still generate elsewhere. Defaults to false.");
-
-		config.addCustomCategoryComment("dimension_blacklist", "If set to true, portals cannot be created in these dimensions\nat all, whether framed, single block, or 'random destination'\nportals. Takes precedence over the whitelist. Defaults to false.");
-
-		config.addCustomCategoryComment("dimension_whitelist", "If set to true, portals can ONLY be created in the given dimensions,\nwhether framed, single block, or 'random destination' portals.\nDefaults to false.");
-
-		int[] defaultBlackList = { 1 };
-		int[] defaultWhiteList = { 0, -1 };
-		int[] fullDefaultList = { 0, 1, -1 };
-		int[] emptyList = new int[0];
-
-		useDestinationBlackList = config.getBoolean("Use this Blacklist?", "random_destination_blacklist", true, "");
-		useDestinationWhiteList = config.getBoolean("Use this Whitelist?", "random_destination_whitelist", false, "");
-		destinationBlackList = config.get("random_destination_blacklist", "List of Blacklisted Dimensions for Random Generation", defaultBlackList).getIntList();
-		destinationWhiteList = config.get("random_destination_whitelist", "List of Whitelisted Dimensions for Random Generation", defaultWhiteList).getIntList();
-		
-		useDimensionBlackList = config.getBoolean("Use this Blacklist?", "dimension_blacklist", false, "");
-		useDimensionWhiteList = config.getBoolean("Use this Whitelist?", "dimension_whitelist", false, "");
-		dimensionBlackList = config.get("dimension_blacklist", "List of Blacklisted Dimensions for all Portals", emptyList).getIntList();
-		dimensionWhiteList = config.get("dimension_whitelist", "List of Whitelisted Dimensions for all Portals", fullDefaultList).getIntList();
-
-		config.addCustomCategoryComment("portal_frame_types", "Blocks that can be used to make portals out of.\nThey should have 16 metadata types that represent\ncolours in the same way as wool.");
-
-		String[] defaultPortalTypes = { "wool", "stained_hardened_clay", "stained_glass" };
-		//No support for custom portal types at the moment!
-		frameBlockNames = defaultPortalTypes;//= config.get("portal_frame_types", "Portal Frame Blocks", defaultPortalTypes).getStringList();
-		bucketColourfulWaterEmpty = new ItemBucketColourfulWater(true, true, false).setUnlocalizedName("bucketColourfulWaterEmpty").setRegistryName("bucketColourfulWaterEmpty");
-		bucketColourfulWater = new ItemBucketColourfulWater(true, true, true).setUnlocalizedName("bucketColourfulWater").setRegistryName("bucketColourfulWater");
-		bucketColourfulWaterUnmixed = new ItemBucketColourfulWater(false, false, true).setUnlocalizedName("bucketColourfulWaterUnmixed").setRegistryName("bucketColourfulWaterUnmixed");
-		bucketColourfulWaterPartMixed = new ItemBucketColourfulWater(true, false, true).setUnlocalizedName("bucketColourfulWaterPartMixed").setRegistryName("bucketColourfulWaterPartMixed");
-		bucketColourfulWaterFirst = new ItemBucketColourfulWater(false, true, false).setUnlocalizedName("bucketColourfulWaterFirst").setRegistryName("bucketColourfulWaterFirst");
-		enderPearlColoured = new ItemEnderPearlColoured(false).setRegistryName("colourfulEnderPearl");
-		enderPearlColouredReflective = new ItemEnderPearlColoured(true).setRegistryName("colourfulEnderPearlReflective");
-		colourfulWater = new BlockColourfulWater().setDensity(colourfulFluid.getDensity()).setHardness(100.0F).setLightOpacity(3);
-		
-		config.save();
-
-		GameRegistry.register(bucketColourfulWaterEmpty);
-		GameRegistry.register(bucketColourfulWater);
-		GameRegistry.register(bucketColourfulWaterUnmixed);
-		GameRegistry.register(bucketColourfulWaterPartMixed);
-		GameRegistry.register(bucketColourfulWaterFirst);
-		GameRegistry.register(enderPearlColoured);
-		GameRegistry.register(enderPearlColouredReflective);
-
 		//GameRegistry.registerBlock(colourfulWater, colourfulWaterId);
-		FluidContainerRegistry.registerFluidContainer(colourfulFluid, new ItemStack(bucketColourfulWater), new ItemStack(bucketColourfulWaterEmpty));
+		//FluidContainerRegistry.registerFluidContainer(colourfulFluid, new ItemStack(ColourfulItems.bucketColourfulWater), new ItemStack(ColourfulItems.bucketColourfulWaterEmpty));
 		FluidRegistry.addBucketForFluid(colourfulFluid);
-		for (int i = 0; i < frameBlockNames.length; i++)
+		/*for (int i = 0; i < frameBlockNames.length; i++)
 		{
+			int e = 8;
 			Block frameBlock = Block.getBlockFromName(frameBlockNames[i]);
 			
 			if(frameBlock == null || frameBlock == Blocks.AIR) {
 				FMLLog.warning("[Colourful Portals] Error! Couldn't find a block with name '" + frameBlockNames[i] + "'!");
 				continue;
 			}
-			cpBlocks.put(i, (BlockColourfulPortal)new BlockColourfulPortal("portal_colour", Material.PORTAL).setHardness(-1.0F).setLightLevel(0.75F).setUnlocalizedName("colourfulPortal").setRegistryName(ColourfulPortalsMod.colourfulPortalIdPrefix + ColourfulPortalsMod.frameNames.get(i)));
-			scpBlocks.put(i, (BlockStandaloneCP)new BlockStandaloneCP("portal_colour", frameBlock.getMaterial(state)).setHardness(0.8F).setLightLevel(0.75F).setUnlocalizedName("standaloneColourfulPortal").setRegistryName(ColourfulPortalsMod.standaloneCPIdPrefix + ColourfulPortalsMod.frameNames.get(i)));
+			//cpBlocks.put(i, (BlockColourfulPortal)new BlockColourfulPortal("portal_colour", Material.PORTAL).setHardness(-1.0F).setLightLevel(0.75F).setUnlocalizedName("colourfulPortal").setRegistryName(ColourfulPortalsMod.colourfulPortalIdPrefix + ColourfulPortalsMod.frameNames.get(i)));
+			cpBlocks.add(e, (BlockColourfulPortal)new BlockColourfulPortal("portal_colour", Material.PORTAL).setHardness(-1.0F).setLightLevel(0.75F).setUnlocalizedName("colourfulPortal").setRegistryName(ColourfulPortalsMod.colourfulPortalIdPrefix + ColourfulPortalsMod.frameNames.get(i)));
+			//scpBlocks.put(i, (BlockStandaloneCP)new BlockStandaloneCP("portal_colour", frameBlock.getMaterial(state)).setHardness(0.8F).setLightLevel(0.75F).setUnlocalizedName("standaloneColourfulPortal").setRegistryName(ColourfulPortalsMod.standaloneCPIdPrefix + ColourfulPortalsMod.frameNames.get(i)));
+			scpBlocks.add(i, (BlockStandaloneCP)new BlockStandaloneCP("portal_colour", frameBlock.getMaterial(state)).setHardness(0.8F).setLightLevel(0.75F).setUnlocalizedName("standaloneColourfulPortal").setRegistryName(ColourfulPortalsMod.standaloneCPIdPrefix + ColourfulPortalsMod.frameNames.get(i)));
 			frameBlocks.put(i, frameBlock);
 			
 			int colonIndex = frameBlockNames[i].indexOf(":");
 			if (colonIndex != -1) {
-				frameNames.put(i, frameBlockNames[i].substring(0, colonIndex) + "_" + frameBlockNames[i].substring(colonIndex + 1));
+				//frameNames.put(i, frameBlockNames[i].substring(0, colonIndex) + "_" + frameBlockNames[i].substring(colonIndex + 1));
+				frameNames.add(i, frameBlockNames[i].substring(0, colonIndex) + "_" + frameBlockNames[i].substring(colonIndex + 1));
 			}
 			else {
-				frameNames.put(i, frameBlockNames[i]);
+				//frameNames.put(i, frameBlockNames[i]);
+				frameNames.add(i, frameBlockNames[i]);
 			}
-		}
-		for (int i = 0; i < cpBlocks.size(); i++)
+		}*/
+		/*for (int i = 0; i < cpBlocks.size(); i++)
 		{
 			GameRegistry.register((Block)scpBlocks.get(i));
 			GameRegistry.register((Block)cpBlocks.get(i));
 			//GameRegistry.register(new ItemStandaloneCP(BlockStandaloneCP).setRegistryName(BlockStandaloneCP.getRegistryName()));
-		}
+		}*/
+		//ColourfulConfig.config();
+		ColourfulItems.instantiateItems();
+		ColourfulItems.registerItems();
+		ColourfulBlocks.instantiateBlocks();
+		ColourfulBlocks.registerBlocks();
 	}
 
 	public static BlockStandaloneCP BlockStandaloneCP;
@@ -282,12 +221,14 @@ public class ColourfulPortalsMod
 
 	public static boolean isStandaloneCPBlock(Block block)
 	{
-		return scpBlocks.containsValue(block);
+		//return scpBlocks.containsValue(block);
+		return scpBlocks.contains(block);
 	}
 
 	public static boolean isFramedCPBlock(Block block)
 	{
-		return cpBlocks.containsValue(block);
+		//return cpBlocks.containsValue(block);
+		return cpBlocks.contains(block);
 	}
 
 	public static boolean isCPBlock(Block block)
