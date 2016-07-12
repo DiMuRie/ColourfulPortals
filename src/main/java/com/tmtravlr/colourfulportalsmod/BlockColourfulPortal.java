@@ -44,7 +44,6 @@ import net.minecraft.world.World;
 import net.minecraft.world.WorldProvider;
 import net.minecraft.world.WorldServer;
 import net.minecraftforge.fml.common.FMLCommonHandler;
-import net.minecraftforge.fml.common.registry.GameRegistry;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
@@ -69,15 +68,7 @@ extends BlockBreakable
 	public BlockColourfulPortal(String texture, Material material)
 	{
 		super(material, false);
-		this.setRegistryName(ColourfulPortalsMod.colourfulPortalIdPrefix + ColourfulPortalsMod.frameNames);
-		this.setRegistryName(ColourfulPortalsMod.colourfulPortalIdPrefix + ColourfulPortalsMod.frameNames);
-		/*for (int i = 0; i < ColourfulPortalsMod.cpBlocks.size(); i++)
-		{
-		this.setUnlocalizedName(ColourfulPortalsMod.colourfulPortalIdPrefix + ColourfulPortalsMod.frameNames.get(i));
-		this.setRegistryName(ColourfulPortalsMod.colourfulPortalIdPrefix + ColourfulPortalsMod.frameNames.get(i));
-		}*/
 		setTickRandomly(true);
-		GameRegistry.register(this);
 	}
 
 	

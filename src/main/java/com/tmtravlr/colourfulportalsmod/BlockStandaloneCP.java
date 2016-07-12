@@ -19,7 +19,6 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
-import net.minecraftforge.fml.common.registry.GameRegistry;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
@@ -35,12 +34,6 @@ public class BlockStandaloneCP
   public BlockStandaloneCP(String texture,Material material)
   {
     super(texture, material);
-    for (int i = 0; i < ColourfulPortalsMod.cpBlocks.size(); i++)
-	{
-    	this.setUnlocalizedName(ColourfulPortalsMod.standaloneCPIdPrefix + ColourfulPortalsMod.frameNames.get(i));
-		this.setRegistryName(ColourfulPortalsMod.standaloneCPIdPrefix + ColourfulPortalsMod.frameNames.get(i));
-	}
-    GameRegistry.register(new ItemStandaloneCP(this).setRegistryName(this.getRegistryName()));
     setCreativeTab(ColourfulPortalsMod.cpTab);
   }
   

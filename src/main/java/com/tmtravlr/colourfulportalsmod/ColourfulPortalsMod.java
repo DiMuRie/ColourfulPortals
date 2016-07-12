@@ -112,13 +112,14 @@ public class ColourfulPortalsMod
 		this.currentFolder = "";
 	}
 	IBlockState state;
+	public static void Method(){
+		FluidRegistry.enableUniversalBucket();
+	}
 
 	//public static RenderStandaloneCP standaloneRenderer = new RenderStandaloneCP();
-
 	@Mod.EventHandler
 	public void preInit(FMLPreInitializationEvent event)
 	{
-		FluidRegistry.enableUniversalBucket();
 		colourfulPortalsMod = this;
 		//boolean addColourfulWaterToDungeonChests = true;
 
@@ -195,8 +196,8 @@ public class ColourfulPortalsMod
 				FMLLog.warning("[Colourful Portals] Error! Couldn't find a block with name '" + frameBlockNames[i] + "'!");
 				continue;
 			}
-			cpBlocks.put(i, (BlockColourfulPortal)new BlockColourfulPortal("portal_colour", Material.PORTAL).setHardness(-1.0F).setLightLevel(0.75F)/*.setUnlocalizedName("colourfulPortal")*/);
-			scpBlocks.put(i, (BlockStandaloneCP)new BlockStandaloneCP("portal_colour", frameBlock.getMaterial(state)).setHardness(0.8F).setLightLevel(0.75F)/*.setUnlocalizedName("standaloneColourfulPortal")*/);
+			cpBlocks.put(i, (BlockColourfulPortal)new BlockColourfulPortal("portal_colour", Material.PORTAL).setHardness(-1.0F).setLightLevel(0.75F).setUnlocalizedName("colourfulPortal").setRegistryName(ColourfulPortalsMod.colourfulPortalIdPrefix + ColourfulPortalsMod.frameNames.get(i)));
+			scpBlocks.put(i, (BlockStandaloneCP)new BlockStandaloneCP("portal_colour", frameBlock.getMaterial(state)).setHardness(0.8F).setLightLevel(0.75F).setUnlocalizedName("standaloneColourfulPortal").setRegistryName(ColourfulPortalsMod.standaloneCPIdPrefix + ColourfulPortalsMod.frameNames.get(i)));
 			frameBlocks.put(i, frameBlock);
 			
 			int colonIndex = frameBlockNames[i].indexOf(":");
@@ -207,14 +208,16 @@ public class ColourfulPortalsMod
 				frameNames.put(i, frameBlockNames[i]);
 			}
 		}
-		
-		/*for (int i = 0; i < cpBlocks.size(); i++)
+		for (int i = 0; i < cpBlocks.size(); i++)
 		{
 			GameRegistry.register((Block)scpBlocks.get(i));
 			GameRegistry.register((Block)cpBlocks.get(i));
-		}*/
+			//GameRegistry.register(new ItemStandaloneCP(BlockStandaloneCP).setRegistryName(BlockStandaloneCP.getRegistryName()));
+		}
 	}
 
+	public static BlockStandaloneCP BlockStandaloneCP;
+	
 	@Mod.EventHandler
 	public void load(FMLInitializationEvent event)
 	{
