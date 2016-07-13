@@ -1,14 +1,14 @@
 [
 {
-  "modid": "colourfulportalsmod",
-  "name": "Colourful Portals",
+  "modid": "colourfulportals",
+  "name": "ColourfulPortalsMod",
   "description": "Adds colourful portals, which are made with a frame of wool/stained clay/stained glass/any other coloured block and a new colourful water. For more info/change logs, visit the forum post at the url above.",
-  "version": "${version}",
+  "version": "2.0-alpha",
   "mcversion": "${mcversion}",
   "url": "http://www.minecraftforum.net/topic/1965583-colourful-portals-mod-v132/",
   "updateUrl": "",
   "authors": ["Tmtravlr"],
-  "credits": "Made by Tmtravlr. Many thanks to all the tutorial makers. And of course to Mojang, for such a fun game.",
+  "credits": "Made by Tmtravlr. Many thanks to all the tutorial makers. And of course to Mojang, for such a fun game.Also,the FML and Forge guys and DiMuRie for porting to 1.9.4/1.10",
   "logoFile": "",
   "screenshots": [],
   "dependencies": []
