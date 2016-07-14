@@ -11,6 +11,8 @@ import java.util.Stack;
 import javax.annotation.Nullable;
 
 import com.tmtravlr.cp.CPLib;
+import com.tmtravlr.cp.CPLocations;
+import com.tmtravlr.cp.CPLocations;
 import com.tmtravlr.cp.ColourfulTeleporter;
 import com.tmtravlr.cp.EntityCPortalFX;
 import com.tmtravlr.cp.init.ColorfulSounds;
@@ -118,7 +120,7 @@ extends BlockBreakable
 	@Override
 	public void breakBlock(World world, BlockPos pos, IBlockState state)
 	{
-		CPLib.deletePortal(new CPLib.ColourfulPortalLocation(pos, world.provider.getDimension(), CPLib.getShiftedCPMetadata(state)));
+		CPLib.deletePortal(new CPLocations(pos, world.provider.getDimension(), CPLib.getShiftedCPMetadata(state)));
 	}
 	public void onNeighborBlockChange(World world, BlockPos pos, IBlockState state, Block other)
 	{
@@ -166,21 +168,21 @@ extends BlockBreakable
 		if ((!xDir) && (!yDir) && (!zDir))
 		{
 			CPLib.CPLSet visited = new CPLib.CPLSet();
-			Stack<CPLib.ColourfulPortalLocation> toVisit = new Stack();
+			Stack<CPLocations> toVisit = new Stack();
 
-			toVisit.push(new CPLib.ColourfulPortalLocation(pos, world.provider.getDimension(), CPLib.getShiftedCPMetadata(world, pos)));
+			toVisit.push(new CPLocations(pos, world.provider.getDimension(), CPLib.getShiftedCPMetadata(world, pos)));
 
 			visited.add(toVisit.peek());
 			while (!toVisit.empty())
 			{
-				CPLib.ColourfulPortalLocation current = (CPLib.ColourfulPortalLocation)toVisit.pop();
+				CPLocations current = (CPLocations)toVisit.pop();
 
 				int[][] dispArray = { { 0, 0, -1 }, { 0, 0, 1 }, { 0, -1, 0 }, { 0, 1, 0 }, { -1, 0, 0 }, { 1, 0, 0 } };
 				for (int[] disps : dispArray) {
 					BlockPos currentPos = new BlockPos(current.xPos + disps[0], current.yPos + disps[1], current.zPos + disps[2]);
 					if (CPLib.isFramedCPBlock(world.getBlockState(currentPos).getBlock()))
 					{
-						CPLib.ColourfulPortalLocation temp = new CPLib.ColourfulPortalLocation(currentPos, world.provider.getDimension(), CPLib.getShiftedCPMetadata(world, currentPos));
+						CPLocations temp = new CPLocations(currentPos, world.provider.getDimension(), CPLib.getShiftedCPMetadata(world, currentPos));
 						if (!visited.contains(temp))
 						{
 							toVisit.push(temp);
@@ -189,7 +191,7 @@ extends BlockBreakable
 					}
 				}
 			}
-			for (CPLib.ColourfulPortalLocation toDelete : visited) {
+			for (CPLocations toDelete : visited) {
 				world.setBlockToAir(new BlockPos(toDelete.xPos, toDelete.yPos, toDelete.zPos));
 			}
 		}
@@ -415,16 +417,16 @@ public static ColourfulBlocks ColourfulBlocks;
 						zLook = true;
 					}
 					CPLib.CPLSet visited = new CPLib.CPLSet();
-					Stack<CPLib.ColourfulPortalLocation> toVisit = new Stack();
+					Stack<CPLocations> toVisit = new Stack();
 
-					toVisit.push(new CPLib.ColourfulPortalLocation(pos, world.provider.getDimension(), CPLib.getShiftedCPMetadata(world, pos)));
+					toVisit.push(new CPLocations(pos, world.provider.getDimension(), CPLib.getShiftedCPMetadata(world, pos)));
 
 					visited.add(toVisit.peek());
 
 					int maxSizeTotal = (CPLib.maxPortalSizeCheck * CPLib.maxPortalSizeCheck - 1) * (CPLib.maxPortalSizeCheck * CPLib.maxPortalSizeCheck - 1);
 					for (int j = 0; (j < maxSizeTotal) && (!toVisit.empty()) && (dirs[d]); j++)
 					{
-						CPLib.ColourfulPortalLocation current = (CPLib.ColourfulPortalLocation)toVisit.pop();
+						CPLocations current = (CPLocations)toVisit.pop();
 						BlockPos currentPos = new BlockPos(current.xPos, current.yPos, current.zPos);
 						if ((dirs[0]) || (dirs[2]))
 						{
@@ -495,7 +497,7 @@ public static ColourfulBlocks ColourfulBlocks;
 							{
 								if (world.isAirBlock(currentPos.up()) || world.getBlockState(currentPos.up()).getBlock() == ColourfulBlocks.cwater)
 								{
-									CPLib.ColourfulPortalLocation temp = new CPLib.ColourfulPortalLocation(currentPos.up(), world.provider.getDimension(), CPLib.getShiftedCPMetadataByFrameBlock(frameState));
+									CPLocations temp = new CPLocations(currentPos.up(), world.provider.getDimension(), CPLib.getShiftedCPMetadataByFrameBlock(frameState));
 									if (!visited.contains(temp))
 									{
 										toVisit.push(temp);
@@ -504,7 +506,7 @@ public static ColourfulBlocks ColourfulBlocks;
 								}
 								if (world.isAirBlock(currentPos.down()) || world.getBlockState(currentPos.down()).getBlock() == ColourfulBlocks.cwater)
 								{
-									CPLib.ColourfulPortalLocation temp = new CPLib.ColourfulPortalLocation(currentPos.down(), world.provider.getDimension(), CPLib.getShiftedCPMetadataByFrameBlock(frameState));
+									CPLocations temp = new CPLocations(currentPos.down(), world.provider.getDimension(), CPLib.getShiftedCPMetadataByFrameBlock(frameState));
 									if (!visited.contains(temp))
 									{
 										toVisit.push(temp);
@@ -516,7 +518,7 @@ public static ColourfulBlocks ColourfulBlocks;
 							{
 								if (world.isAirBlock(currentPos.south()) || world.getBlockState(currentPos.south()).getBlock() == ColourfulBlocks.cwater)
 								{
-									CPLib.ColourfulPortalLocation temp = new CPLib.ColourfulPortalLocation(currentPos.south(), world.provider.getDimension(), CPLib.getShiftedCPMetadataByFrameBlock(frameState));
+									CPLocations temp = new CPLocations(currentPos.south(), world.provider.getDimension(), CPLib.getShiftedCPMetadataByFrameBlock(frameState));
 									if (!visited.contains(temp))
 									{
 										toVisit.push(temp);
@@ -525,7 +527,7 @@ public static ColourfulBlocks ColourfulBlocks;
 								}
 								if (world.isAirBlock(currentPos.north()) || world.getBlockState(currentPos.north()).getBlock() == ColourfulBlocks.cwater)
 								{
-									CPLib.ColourfulPortalLocation temp = new CPLib.ColourfulPortalLocation(currentPos.north(), world.provider.getDimension(), CPLib.getShiftedCPMetadataByFrameBlock(frameState));
+									CPLocations temp = new CPLocations(currentPos.north(), world.provider.getDimension(), CPLib.getShiftedCPMetadataByFrameBlock(frameState));
 									if (!visited.contains(temp))
 									{
 										toVisit.push(temp);
@@ -537,7 +539,7 @@ public static ColourfulBlocks ColourfulBlocks;
 							{
 								if (world.isAirBlock(currentPos.east()) || world.getBlockState(currentPos.east()).getBlock() == ColourfulBlocks.cwater)
 								{
-									CPLib.ColourfulPortalLocation temp = new CPLib.ColourfulPortalLocation(currentPos.east(), world.provider.getDimension(), CPLib.getShiftedCPMetadataByFrameBlock(frameState));
+									CPLocations temp = new CPLocations(currentPos.east(), world.provider.getDimension(), CPLib.getShiftedCPMetadataByFrameBlock(frameState));
 									if (!visited.contains(temp))
 									{
 										toVisit.push(temp);
@@ -546,7 +548,7 @@ public static ColourfulBlocks ColourfulBlocks;
 								}
 								if (world.isAirBlock(currentPos.west()) || world.getBlockState(currentPos.west()).getBlock() == ColourfulBlocks.cwater)
 								{
-									CPLib.ColourfulPortalLocation temp = new CPLib.ColourfulPortalLocation(currentPos.west(), world.provider.getDimension(), CPLib.getShiftedCPMetadataByFrameBlock(frameState));
+									CPLocations temp = new CPLocations(currentPos.west(), world.provider.getDimension(), CPLib.getShiftedCPMetadataByFrameBlock(frameState));
 									if (!visited.contains(temp))
 									{
 										toVisit.push(temp);
@@ -558,7 +560,7 @@ public static ColourfulBlocks ColourfulBlocks;
 					}
 					if (dirs[d])
 					{
-						for (CPLib.ColourfulPortalLocation cpl : visited) {
+						for (CPLocations cpl : visited) {
 							if (((dirs[0]) && (cpl.xPos == x)) || ((dirs[1]) && (cpl.yPos == y)) || ((dirs[2]) && (cpl.zPos == z))) {
 								CPLib.setFramedCPBlock(world, new BlockPos(cpl.xPos, cpl.yPos, cpl.zPos), frameBlock, frameMeta, 2);
 							}
@@ -566,7 +568,7 @@ public static ColourfulBlocks ColourfulBlocks;
 						int shiftedMeta = CPLib.getShiftedCPMetadata(world, pos);
 						boolean creationSuccess = true;
 						if (addLocationToList) {
-							creationSuccess = CPLib.addPortalToList(new CPLib.ColourfulPortalLocation(pos, world.provider.getDimension(), shiftedMeta));
+							creationSuccess = CPLib.addPortalToList(new CPLocations(pos, world.provider.getDimension(), shiftedMeta));
 						}
 						return creationSuccess;
 					}
@@ -581,7 +583,7 @@ public static ColourfulBlocks ColourfulBlocks;
 		boolean creationSuccess = false;
 		if (!CPLib.tooManyPortals(state))
 		{
-			CPLib.ColourfulPortalLocation destination = createDestination(sameDim, world.provider.getDimension(), CPLib.getShiftedCPMetadata(world, pos), world, pos);
+			CPLocations destination = createDestination(sameDim, world.provider.getDimension(), CPLib.getShiftedCPMetadata(world, pos), world, pos);
 			if (destination == null) {
 				return;
 			}
@@ -598,7 +600,7 @@ public static ColourfulBlocks ColourfulBlocks;
 		world.playSound((double)pos.getX() + 0.5D, (double)pos.getY() + 0.5D, (double)pos.getZ() + 0.5D, ColorfulSounds.TELEPORT, SoundCategory.BLOCKS, 0.5F, random.nextFloat() * 0.4F + 0.8F, false);
 	}
 
-	private static CPLib.ColourfulPortalLocation createDestination(boolean isSameDim, int oldDim, int meta, World world, BlockPos pos)
+	private static CPLocations createDestination(boolean isSameDim, int oldDim, int meta, World world, BlockPos pos)
 	{
 		int unshiftedMeta = CPLib.unshiftCPMetadata(meta);
 		Block portalBlock = CPLib.getCPBlockByShiftedMetadata(meta);
@@ -625,12 +627,12 @@ public static ColourfulBlocks ColourfulBlocks;
 		WorldServer worldServer;    
 		if (isSameDim)
 		{
-			worldServer = FMLCommonHandler.instance().getMinecraftServerInstance().worldServerForDimension(oldDim);
+			worldServer = world.getMinecraftServer().worldServerForDimension(oldDim);
 			dimension = oldDim;
 		}
 		else
 		{
-			WorldServer[] wServers = FMLCommonHandler.instance().getMinecraftServerInstance().worldServers;
+			WorldServer[] wServers = world.getMinecraftServer().worldServers;
 			int indexStart = rand.nextInt(wServers.length);
 			int index = indexStart;
 
@@ -804,7 +806,7 @@ public static ColourfulBlocks ColourfulBlocks;
 				}
 			}
 		}
-		return new CPLib.ColourfulPortalLocation(new BlockPos(var29, var15, var16), dimension, meta);
+		return new CPLocations(new BlockPos(var29, var15, var16), dimension, meta);
 	}
 
 	public static void playColourfulTeleportSound(World world, double x, double y, double z,BlockPos pos)
@@ -826,16 +828,16 @@ public static ColourfulBlocks ColourfulBlocks;
 
 	private Entity teleportColourfully(World world, BlockPos startPos, Entity entity)
 	{
-		CPLib.ColourfulPortalLocation destination = CPLib.getColourfulDestination(world, startPos);
+		CPLocations destination = CPLib.getColourfulDestination(world, startPos);
 		//Make sure the dimension we are trying to teleport to exists first!
-		if(FMLCommonHandler.instance().getMinecraftServerInstance().worldServerForDimension(destination.dimension) == null) {
+		if(world.getMinecraftServer().worldServerForDimension(destination.dimension) == null) {
 			return entity;
 		}
 		int meta = destination.portalMetadata;
 		double x = destination.xPos + 0.5D;
-		double y = destination.yPos + 0.1D + (CPLib.isStandaloneCPBlock(FMLCommonHandler.instance().getMinecraftServerInstance().worldServerForDimension(destination.dimension).getBlockState(new BlockPos(destination.xPos, destination.yPos, destination.zPos)).getBlock()) ? 1.0D : 0.0D);
+		double y = destination.yPos + 0.1D + (CPLib.isStandaloneCPBlock(world.getMinecraftServer().worldServerForDimension(destination.dimension).getBlockState(new BlockPos(destination.xPos, destination.yPos, destination.zPos)).getBlock()) ? 1.0D : 0.0D);
 		double z = destination.zPos + 0.5D;
-		WorldServer newWorldServer = FMLCommonHandler.instance().getMinecraftServerInstance().worldServerForDimension(destination.dimension);
+		WorldServer newWorldServer = world.getMinecraftServer().worldServerForDimension(destination.dimension);
 		
 		Entity ridingEntity = entity.getRidingEntity();
 		if(ridingEntity != null) {
@@ -849,7 +851,7 @@ public static ColourfulBlocks ColourfulBlocks;
 		EntityPlayerMP player = null;
 		if ((entity instanceof EntityPlayer))
 		{
-			Iterator iterator = ((List<Entity>) FMLCommonHandler.instance().getMinecraftServerInstance().getPlayerList()).iterator();//.playerEntityList.iterator();
+			Iterator iterator = ((List<Entity>) world.getMinecraftServer().getPlayerList()).iterator();//.playerEntityList.iterator();
 			EntityPlayerMP entityplayermp = null;
 			do
 			{
@@ -883,7 +885,7 @@ public static ColourfulBlocks ColourfulBlocks;
 		return entity;
 	}
 
-	private static Entity teleportEntityColourfully(World world, double x, double y, double z, Entity entity, CPLib.ColourfulPortalLocation destination)
+	private static Entity teleportEntityColourfully(World world, double x, double y, double z, Entity entity, CPLocations destination)
 	{
 		int meta = destination.portalMetadata;
 		int dimension = destination.dimension;
@@ -899,7 +901,7 @@ public static ColourfulBlocks ColourfulBlocks;
 		return entity;
 	}
 
-	private static void teleportPlayerColourfully(World world, double x, double y, double z, EntityPlayerMP player, CPLib.ColourfulPortalLocation destination)
+	private static void teleportPlayerColourfully(World world, double x, double y, double z, EntityPlayerMP player, CPLocations destination)
 	{
 		int meta = destination.portalMetadata;
 		int dimension = destination.dimension;
@@ -979,13 +981,14 @@ public static ColourfulBlocks ColourfulBlocks;
 		}
 		FMLCommonHandler.instance().firePlayerChangedDimensionEvent(player, j, newDimension);
 	}
+	static World world;
 
 	public static Entity transferEntityToDimension(Entity toTeleport, int newDimension, double x, double y, double z)
 	{
 		if (!toTeleport.isDead)
 		{
 			toTeleport.worldObj.theProfiler.startSection("changeDimension");
-			MinecraftServer minecraftserver = FMLCommonHandler.instance().getMinecraftServerInstance();
+			MinecraftServer minecraftserver = world.getMinecraftServer();
 			int oldDimension = toTeleport.dimension;
 			WorldServer worldServerOld = minecraftserver.worldServerForDimension(oldDimension);
 			WorldServer worldServerNew = minecraftserver.worldServerForDimension(newDimension);

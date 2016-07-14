@@ -1,24 +1,34 @@
 package com.tmtravlr.cp.worldsavedata;
 
-import com.tmtravlr.cp.CPLib;
-import com.tmtravlr.cp.CPLib.ColourfulPortalLocation;
+import java.util.Iterator;
+import java.util.LinkedList;
+
+import org.apache.commons.lang3.StringUtils;
+
+import com.sun.org.apache.xerces.internal.xs.StringList;
+import com.tmtravlr.cp.CPLocations;
 
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldSavedData;
 import net.minecraft.world.storage.MapStorage;
 
 public class ColourfulData extends WorldSavedData {
 
-	  private static final String DATA_NAME = "CPL[meta=" + CPLib.ColourfulPortalLocation.portalMetadata + ", x=" + CPLib.ColourfulPortalLocation.xPos + ", y=" + CPLib.ColourfulPortalLocation.yPos + ", z=" + CPLib.ColourfulPortalLocation.zPos + ", dim=" + CPLib.ColourfulPortalLocation.dimension + "]";
-	  public static boolean IS_GLOBAL = true;
-	  BlockPos pos;
-	  int dim;
-	  int meta;
-	  CPLib.ColourfulPortalLocation cploc = new ColourfulPortalLocation(pos, dim, meta);
-	  String ColourfulPortalLocation = "CPL[meta=" + CPLib.ColourfulPortalLocation.portalMetadata + ", x=" + CPLib.ColourfulPortalLocation.xPos + ", y=" + CPLib.ColourfulPortalLocation.yPos + ", z=" + CPLib.ColourfulPortalLocation.zPos + ", dim=" + CPLib.ColourfulPortalLocation.dimension + "]";
+	  private static final String DATA_NAME = "CPL[meta=" + CPLocations.portalMetadata + ", x=" + CPLocations.xPos + ", y=" + CPLocations.yPos + ", z=" + CPLocations.zPos + ", dim=" + CPLocations.dimension + "]";
+	  public static final boolean IS_GLOBAL = true;
+	  //BlockPos pos;
+	  //int dim;
+	  //int meta;
+	  private final LinkedList<CPLocations> colourfulPortals = new LinkedList();
+	  
+	  public LinkedList<CPLocations> getCPL(){
+		  return colourfulPortals;
+	  }
+	  
+	  private CPLocations cploc;
+	  World world;
 
 	  // Required constructors
 	  public ColourfulData() {
@@ -43,16 +53,37 @@ public class ColourfulData extends WorldSavedData {
 	  
 	@Override
 	public void readFromNBT(NBTTagCompound nbt) {
-        NBTTagList list = nbt.getTagList(cploc.toString(), 10);
-	}
+        //NBTTagList list = nbt.getTagList(cploc.toString(), 10);
+		//NBTTagList meta = nbt.getTagList("meta=", 10);
+		//NBTTagList x = nbt.getTagList("x=", 10);
+		//NBTTagList y = nbt.getTagList("y=", 10);
+		//NBTTagList z = nbt.getTagList("z=", 10);
+		//NBTTagList dim = nbt.getTagList("dim=", 10);
+        colourfulPortals.clear();
+        nbt.getTagList("meta=", 10);
+        nbt.getTagList("x=", 10);
+        nbt.getTagList("y=", 10);
+        nbt.getTagList("z=", 10);
+        nbt.getTagList("dim=", 10);
+        //nbt.toString("CPL[" +nbt.getTag("meta=") + ", " + nbt.getTag("x=") + ", " + nbt.getTag("y=") + ", " + nbt.getTag("z=") + ", " + nbt.getTag("dim=") + "]");
+        
+        colourfulPortals.forEach((cploc) -> {
+        	//StringUtils.join(list);
+        });
 
+	}
+	NBTTagList list = new NBTTagList();
 	@Override
 	public NBTTagCompound writeToNBT(NBTTagCompound nbt) {
-		NBTTagList list = new NBTTagList();
-        nbt.setString("cploc", cploc.toString());
-        if(!nbt.getString("cploc").isEmpty()){
-        	nbt.setString("cploc1", cploc.toString());
-        }
+		//Iterator<CPLocations> iterator = this.colourfulPortals.iterator();
+		//nbt.setString("cploc", CPLocations.instance.toString());
+		NBTTagCompound cpl = new NBTTagCompound();
+		cpl.setString("meta=", "" + CPLocations.portalMetadata);
+		cpl.setString("x=", "" + CPLocations.xPos);
+		cpl.setString("y=", "" + CPLocations.yPos);
+		cpl.setString("z=", "" + CPLocations.zPos);
+		cpl.setString("dim=", "" + CPLocations.dimension);
+		list.appendTag(cpl);
 		/*CPLib.colourfulPortals = new LinkedList();
 		CPLib.checkForPortalChanges();
 		nbt.setString("", ColourfulPortalLocation);

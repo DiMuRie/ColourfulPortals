@@ -6,6 +6,7 @@ import java.util.Random;
 import javax.annotation.Nullable;
 
 import com.tmtravlr.cp.CPLib;
+import com.tmtravlr.cp.CPLocations;
 import com.tmtravlr.cp.EntityCPortalFX;
 import com.tmtravlr.cp.init.ColourfulItems;
 import com.tmtravlr.cp.proxy.ClientProxy;
@@ -146,7 +147,7 @@ public class BlockStandaloneCP
       }
       else
       {
-    	  CPLib.addPortalToList(new CPLib.ColourfulPortalLocation(pos, world.provider.getDimension(), CPLib.getShiftedCPMetadata(world, pos)));
+    	  CPLib.addPortalToList(new CPLocations(pos, world.provider.getDimension(), CPLib.getShiftedCPMetadata(world, pos)));
       }
     }
   }
@@ -154,7 +155,7 @@ public class BlockStandaloneCP
   public void breakBlock(World world, BlockPos pos, IBlockState state)
   {
     if (state.getBlock() == this) {
-    	CPLib.deletePortal(new CPLib.ColourfulPortalLocation(pos, world.provider.getDimension(), CPLib.getShiftedCPMetadata(world, pos)));
+    	CPLib.deletePortal(new CPLocations(pos, world.provider.getDimension(), CPLib.getShiftedCPMetadata(world, pos)));
     }
   }
 }
