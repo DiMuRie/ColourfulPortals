@@ -255,9 +255,9 @@ public class CPLib {
 			return true;
 		}
 		int portalsWithType = 0;
-		for (int i = 0; i < ColourfulData.get(world).colourfulPortals.size(); i++) {
+		for (int i = 0; i < ColourfulData.get(world).getCPL().size(); i++) {
 			//if (((CPLocations)colourfulPortals.get(i)).portalMetadata == getShiftedCPMetadata(state)) {
-			if(( ColourfulData.get(world).colourfulPortals.get(i)).portalMetadata == getShiftedCPMetadata(state)) {
+			if(( ColourfulData.get(world).getCPL().get(i)).portalMetadata == getShiftedCPMetadata(state)) {
 				portalsWithType++;
 			}
 		}
@@ -323,7 +323,7 @@ public class CPLib {
 	{
 		NBTTagCompound nbt = new NBTTagCompound();
 		ArrayList<CPLocations> toDelete = new ArrayList();
-		for (CPLocations portal : ColourfulData.get(world).colourfulPortals)
+		for (CPLocations portal : ColourfulData.get(world).getCPL())
 		{
 			WorldServer currentWS = world.getMinecraftServer().worldServerForDimension(portal.dimension);
 			BlockPos currentPos = new BlockPos(portal.xPos, portal.yPos, portal.zPos);
@@ -334,7 +334,7 @@ public class CPLib {
 			}
 		}
 		for (CPLocations deleted : toDelete) {
-			ColourfulData.get(world).colourfulPortals.remove(deleted);
+			ColourfulData.get(world).getCPL().remove(deleted);
 		}
 		cwdata.writeToNBT(nbt);
 	}
@@ -342,23 +342,23 @@ public class CPLib {
 
 	public static CPLocations getColourfulDestination(World world, BlockPos pos)
 	{
-		if (ColourfulData.get(world).colourfulPortals.size() > 0)
+		if (ColourfulData.get(world).getCPL().size() > 0)
 		{
 			CPLocations start = findCPLocation(world, pos);
 
 
-			int originalPos = ColourfulData.get(world).colourfulPortals.indexOf(start);
+			int originalPos = ColourfulData.get(world).getCPL().indexOf(start);
 			if (originalPos == -1) {
 				return new CPLocations(pos, world.provider.getDimension(), getShiftedCPMetadata(world, pos));
 			}
-			int size = ColourfulData.get(world).colourfulPortals.size();
+			int size = ColourfulData.get(world).getCPL().size();
 			for (int i = 0; i < size; i++)
 			{
 				int index = i + originalPos + 1;
 				if (index >= size) {
 					index -= size;
 				}
-				CPLocations current = (CPLocations)ColourfulData.get(world).colourfulPortals.get(index);
+				CPLocations current = (CPLocations)ColourfulData.get(world).getCPL().get(index);
 				if (current.portalMetadata == start.portalMetadata) {
 					if(world.getMinecraftServer().worldServerForDimension(current.dimension) != null) {
 						return current;
@@ -431,7 +431,7 @@ public class CPLib {
 		while (!toVisit.empty())
 		{
 			CPLocations current = (CPLocations)toVisit.pop();
-			if (ColourfulData.get(world).colourfulPortals.contains(current)) {
+			if (ColourfulData.get(world).getCPL().contains(current)) {
 				return current;
 			}
 			BlockPos currentPos = new BlockPos(current.xPos, current.yPos, current.zPos);
@@ -505,7 +505,7 @@ public class CPLib {
 	public static void deletePortal(CPLocations locToDelete)
 	{
 		NBTTagCompound nbt = new NBTTagCompound();
-		if (ColourfulData.get(world).colourfulPortals.remove(locToDelete)) {
+		if (ColourfulData.get(world).getCPL().remove(locToDelete)) {
 			cwdata.writeToNBT(nbt);
 		}
 	}
@@ -513,9 +513,9 @@ public class CPLib {
 	public static boolean addPortalToList(CPLocations newLocation)
 	{
 		NBTTagCompound nbt = new NBTTagCompound();
-		if (!ColourfulData.get(world).colourfulPortals.contains(newLocation))
+		if (!ColourfulData.get(world).getCPL().contains(newLocation))
 		{
-			ColourfulData.get(world).colourfulPortals.add(newLocation);
+			ColourfulData.get(world).getCPL().add(newLocation);
 			cwdata.writeToNBT(nbt);
 			return true;
 		}
@@ -537,8 +537,7 @@ public class CPLib {
 		}
 	}*/
 
-	public static class CPLSet
-	extends TreeSet<CPLocations>
+	public static class CPLSet extends TreeSet<CPLocations>
 	{
 		public CPLSet()
 		{

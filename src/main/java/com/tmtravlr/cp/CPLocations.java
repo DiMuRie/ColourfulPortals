@@ -1,17 +1,18 @@
 package com.tmtravlr.cp;
 
 import java.io.Serializable;
+import java.util.LinkedList;
 
 import net.minecraft.util.math.BlockPos;
 
 public class CPLocations implements Serializable {
 	
-	public static int xPos;
-	public static int yPos;
-	public static int zPos;
-	public static int dimension;
-	public static int portalMetadata;
-	public static CPLocations instance;
+	public int xPos;
+	public int yPos;
+	public int zPos;
+	public int dimension;
+	public int portalMetadata;
+
 
 	public CPLocations(BlockPos pos, int dim, int meta)
 	{

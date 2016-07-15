@@ -2,6 +2,7 @@ package com.tmtravlr.cp.worldsavedata;
 
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -16,21 +17,19 @@ import net.minecraft.world.storage.MapStorage;
 
 public class ColourfulData extends WorldSavedData {
 
-	  private static final String DATA_NAME = "CPL[meta=" + CPLocations.portalMetadata + ", x=" + CPLocations.xPos + ", y=" + CPLocations.yPos + ", z=" + CPLocations.zPos + ", dim=" + CPLocations.dimension + "]";
-	  public static final boolean IS_GLOBAL = true;
+	  private final static String DATA_NAME = "CPL[]";
+	  public final static boolean IS_GLOBAL = true;
 	  //BlockPos pos;
 	  //int dim;
 	  //int meta;
 	  private final LinkedList<CPLocations> colourfulPortals = new LinkedList();
+	  private NBTTagList nbtag = new NBTTagList();
+	  private CPLocations CPL;
 	  
 	  public LinkedList<CPLocations> getCPL(){
 		  return colourfulPortals;
 	  }
-	  
-	  private CPLocations cploc;
-	  World world;
 
-	  // Required constructors
 	  public ColourfulData() {
 	    super(DATA_NAME);
 	  }
@@ -52,44 +51,28 @@ public class ColourfulData extends WorldSavedData {
 		}
 	  
 	@Override
-	public void readFromNBT(NBTTagCompound nbt) {
-        //NBTTagList list = nbt.getTagList(cploc.toString(), 10);
-		//NBTTagList meta = nbt.getTagList("meta=", 10);
-		//NBTTagList x = nbt.getTagList("x=", 10);
-		//NBTTagList y = nbt.getTagList("y=", 10);
-		//NBTTagList z = nbt.getTagList("z=", 10);
-		//NBTTagList dim = nbt.getTagList("dim=", 10);
-        colourfulPortals.clear();
-        nbt.getTagList("meta=", 10);
-        nbt.getTagList("x=", 10);
-        nbt.getTagList("y=", 10);
-        nbt.getTagList("z=", 10);
-        nbt.getTagList("dim=", 10);
-        //nbt.toString("CPL[" +nbt.getTag("meta=") + ", " + nbt.getTag("x=") + ", " + nbt.getTag("y=") + ", " + nbt.getTag("z=") + ", " + nbt.getTag("dim=") + "]");
-        
-        colourfulPortals.forEach((cploc) -> {
-        	//StringUtils.join(list);
-        });
-
+	public void readFromNBT(NBTTagCompound compound) {
+		CPL.portalMetadata = compound.getInteger("metadata");
+		CPL.xPos = compound.getInteger("posX");
+		CPL.yPos = compound.getInteger("posY");
+		CPL.zPos = compound.getInteger("posZ");
+		CPL.dimension = compound.getInteger("dimension");
 	}
-	NBTTagList list = new NBTTagList();
+	NBTTagCompound ntag = new NBTTagCompound();
 	@Override
-	public NBTTagCompound writeToNBT(NBTTagCompound nbt) {
-		//Iterator<CPLocations> iterator = this.colourfulPortals.iterator();
-		//nbt.setString("cploc", CPLocations.instance.toString());
-		NBTTagCompound cpl = new NBTTagCompound();
-		cpl.setString("meta=", "" + CPLocations.portalMetadata);
-		cpl.setString("x=", "" + CPLocations.xPos);
-		cpl.setString("y=", "" + CPLocations.yPos);
-		cpl.setString("z=", "" + CPLocations.zPos);
-		cpl.setString("dim=", "" + CPLocations.dimension);
-		list.appendTag(cpl);
-		/*CPLib.colourfulPortals = new LinkedList();
-		CPLib.checkForPortalChanges();
-		nbt.setString("", ColourfulPortalLocation);
-		markDirty();
-		return nbt;*/
-		return nbt;
+	public NBTTagCompound writeToNBT(NBTTagCompound compound) {
+		System.out.println("\n==> Iterator Example...");
+		Iterator<CPLocations> cplIterator = ((List) nbtag).iterator();
+		while (cplIterator.hasNext()) {
+			//System.out.println(cplIterator.next());
+		}
+		compound.setInteger("metadata", CPL.portalMetadata);
+		compound.setInteger("posX", CPL.xPos);
+        compound.setInteger("posY", CPL.yPos);
+        compound.setInteger("posZ", CPL.zPos);
+        compound.setInteger("dimension", CPL.dimension);
+        nbtag.appendTag(compound);
+		return compound;
 	}
 
 }
